@@ -103,8 +103,13 @@ buildtest:search-group-1:
   tags:
     - heavy
   script:
+    - cd magda-elastic-search
+    - docker-compose up -d
+    - cd ..
     - "ls $CI_PROJECT_DIR/sbt-cache/ || cp -R /sbt-cache/* $CI_PROJECT_DIR/sbt-cache/"
     - sbt -DelasticSearch.serverUrl=elasticsearch://docker:9200 "intTest/testOnly au.csiro.data61.magda.api.DataSet*Spec"
+    - cd magda-elastic-search
+    - docker-compose down
   artifacts:
     paths:
       - "target"
@@ -115,7 +120,8 @@ buildtest:search-group-2:
     stage: buildtest
     image: registry.gitlab.com/magda-data/magda/data61/magda-builder-scala:$CI_COMMIT_REF_SLUG
     retry: 2
-    dependencies: []
+    dependencies:
+      - buildtest:search-group-1
     before_script:
         - |
             if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
@@ -157,8 +163,13 @@ buildtest:search-group-2:
     tags:
         - heavy
     script:
+        - cd magda-elastic-search
+        - docker-compose up -d
+        - cd ..
         - "ls $CI_PROJECT_DIR/sbt-cache/ || cp -R /sbt-cache/* $CI_PROJECT_DIR/sbt-cache/"
         - sbt -DelasticSearch.serverUrl=elasticsearch://docker:9200 "intTest/testOnly au.csiro.data61.magda.api.Facet*Spec"
+        - cd magda-elastic-search
+        - docker-compose down
     artifacts:
         paths:
             - "target"
@@ -169,7 +180,8 @@ buildtest:search-group-3:
     stage: buildtest
     image: registry.gitlab.com/magda-data/magda/data61/magda-builder-scala:$CI_COMMIT_REF_SLUG
     retry: 2
-    dependencies: []
+    dependencies:
+      - buildtest:search-group-2
     before_script:
         - |
             if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
@@ -211,8 +223,13 @@ buildtest:search-group-3:
     tags:
         - heavy
     script:
+        - cd magda-elastic-search
+        - docker-compose up -d
+        - cd ..
         - "ls $CI_PROJECT_DIR/sbt-cache/ || cp -R /sbt-cache/* $CI_PROJECT_DIR/sbt-cache/"
         - sbt -DelasticSearch.serverUrl=elasticsearch://docker:9200 "intTest/testOnly au.csiro.data61.magda.api.Language*Spec au.csiro.data61.magda.api.Tenant*Spec"
+        - cd magda-elastic-search
+        - docker-compose down
     artifacts:
         paths:
             - "target"
@@ -223,7 +240,8 @@ buildtest:other-int-tests:
   stage: buildtest
   image: registry.gitlab.com/magda-data/magda/data61/magda-builder-scala:$CI_COMMIT_REF_SLUG
   retry: 2
-  dependencies: []
+  dependencies:
+    - buildtest:search-group-3
   before_script:
     - |
       if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
@@ -270,8 +288,13 @@ buildtest:other-int-tests:
   tags:
     - heavy
   script:
+    - cd magda-elastic-search
+    - docker-compose up -d
+    - cd ..
     - "ls $CI_PROJECT_DIR/sbt-cache/ || cp -R /sbt-cache/* $CI_PROJECT_DIR/sbt-cache/"
     - sbt -DelasticSearch.serverUrl=elasticsearch://docker:9200 "intTest/testOnly au.csiro.data61.magda.crawler.*Spec au.csiro.data61.magda.indexer.*Spec au.csiro.data61.magda.opa.*Spec au.csiro.data61.magda.spatial.*Spec"
+    - cd magda-elastic-search
+    - docker-compose down
   artifacts:
     paths:
       - "target"
