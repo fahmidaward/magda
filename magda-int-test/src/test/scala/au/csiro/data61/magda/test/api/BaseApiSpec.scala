@@ -16,6 +16,7 @@ import au.csiro.data61.magda.test.util.{Generators, MagdaElasticSugar, MagdaGene
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.cluster.ClusterHealthResponse
 import com.sksamuel.elastic4s.http.{ElasticClient, RequestFailure, RequestSuccess}
+import com.sksamuel.elastic4s.indexes.DeleteIndexRequest
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.elasticsearch.cluster.health.ClusterHealthStatus
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, Matchers}
@@ -65,6 +66,10 @@ trait BaseApiSpec extends FunSpec with Matchers with ScalatestRouteTest with Mag
 
   override def beforeEach() {
     System.gc()
+
+    logger.info("Deleting all indices....")
+    client.execute(DeleteIndexRequest(List("_all"))).await(90 seconds)
+    logger.info("Deleting all indices complete....")
 
     if (doesIndexExists(DefaultIndices.getIndex(config, Indices.RegionsIndex))) {
       deleteIndex(DefaultIndices.getIndex(config, Indices.RegionsIndex))
