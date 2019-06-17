@@ -14,6 +14,7 @@ services:
       - ./setup-test.sh:/tmp/setup.sh
       - ./regionSynonyms.test.txt:/tmp/regionSynonyms.txt
       - ./wn_s_test.pl:/tmp/wn_s.pl
+      - esdata01:/usr/share/elasticsearch/data
     environment:
       - NODE_NAME=es-data-0
       - CLUSTER_NAME=myesdb
@@ -30,3 +31,6 @@ services:
       - path.logs=/data/logs
     entrypoint:
       - /tmp/setup.sh
+volumes:
+  esdata01:
+    driver: local

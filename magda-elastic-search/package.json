@@ -4,7 +4,7 @@
   "description": "MAGDA's custom elasticsearch docker image.",
   "scripts": {
     "dev": "docker-compose up",
-    "dev-stop": "docker-compose down",
+    "dev-stop": "docker-compose down -v",
     "docker-build-local": "create-docker-context-for-node-component --build --push --tag auto --local",
     "docker-build-prod": "create-docker-context-for-node-component --build --push --tag auto",
     "retag-and-push": "retag-and-push",
