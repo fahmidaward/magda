@@ -76,8 +76,6 @@ trait BaseSearchApiSpec extends BaseApiSpec with RegistryConverters with Protoco
 
   def genIndexForTenantAndSize(rawSize: Int, tenantIds: List[BigInt] = List(MAGDA_ADMIN_PORTAL_ID)): (String, List[DataSet], Route) = {
     val size = rawSize % 100
-    // We are not using cached indexes anymore.  inputCache stays here simply to avoid
-    // too many changes in the interfaces.
     val inputCache: mutable.Map[String, List[_]] = mutable.HashMap.empty
     val dataSets = tenantIds.flatMap( tenantId =>
       Gen.listOfN(size, Generators.dataSetGen(inputCache, tenantId)).retryUntil(_ => true).sample.get
@@ -88,6 +86,8 @@ trait BaseSearchApiSpec extends BaseApiSpec with RegistryConverters with Protoco
 
   def genIndexForSize(rawSize: Int): (String, List[DataSet], Route) = {
     val size = rawSize % 100
+
+    if(cacheIndexDeleted) BaseSearchApiSpec.genCache.clear()
 
     getFromIndexCache(size) match {
       case (cacheKey, None) ⇒
@@ -100,6 +100,7 @@ trait BaseSearchApiSpec extends BaseApiSpec with RegistryConverters with Protoco
 
         BaseSearchApiSpec.genCache.put(cacheKey, future)
         logger.debug("Cache miss for {}", cacheKey)
+        cacheIndexDeleted = false
 
         future.await(INSERTION_WAIT_TIME)
       case (cacheKey, Some(cachedValue)) ⇒

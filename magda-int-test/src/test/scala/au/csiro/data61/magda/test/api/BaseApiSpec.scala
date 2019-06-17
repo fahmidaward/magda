@@ -45,6 +45,9 @@ trait BaseApiSpec extends FunSpec with Matchers with ScalatestRouteTest with Mag
 
   val tenant_1: BigInt = BigInt(1)
   val tenant_2: BigInt = BigInt(2)
+
+  var cacheIndexDeleted:Boolean = false
+
   def addTenantIdHeader(tenantId: BigInt): RawHeader = {
     RawHeader(MAGDA_TENANT_ID_HEADER, tenantId.toString)
   }
@@ -69,6 +72,7 @@ trait BaseApiSpec extends FunSpec with Matchers with ScalatestRouteTest with Mag
 
     logger.info("Deleting all indices....")
     client.execute(DeleteIndexRequest(List("_all"))).await(90 seconds)
+    cacheIndexDeleted = true
     logger.info("Deleting all indices complete....")
 
     if (doesIndexExists(DefaultIndices.getIndex(config, Indices.RegionsIndex))) {
