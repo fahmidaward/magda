@@ -26,6 +26,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
+import au.csiro.data61.magda.client.HttpFetcher
 
 trait BaseApiSpec extends FunSpec with Matchers with ScalatestRouteTest with MagdaElasticSugar with BeforeAndAfterEach with BeforeAndAfterAll with MagdaGeneratorTest with MockServer {
 
@@ -72,6 +73,8 @@ trait BaseApiSpec extends FunSpec with Matchers with ScalatestRouteTest with Mag
 
     logger.info("Deleting all indices....")
     client.execute(DeleteIndexRequest(List("_all"))).await(90 seconds)
+    val esUrl = config.getConfig("elasticSearch").getString("serverUrl").replaceFirst("elasticsearch://", "http://")
+    HttpFetcher(new URL(esUrl)).delete("/_all?refresh").await()
     cacheIndexDeleted = true
     logger.info("Deleting all indices complete....")
 

@@ -37,7 +37,7 @@ class HttpFetcherImpl(baseUrl: URL)(implicit val system: ActorSystem,
 
   def get(path: String, headers: Seq[HttpHeader] = Seq()): Future[HttpResponse] = {
     val url = s"${baseUrl.getPath}${path}"
-    system.log.debug("Making GET request to {}{}", baseUrl.getHost, url)    
+    system.log.debug("Making GET request to {}{}", baseUrl.getHost, url)
     val request = RequestBuilding.Get(url).withHeaders(scala.collection.immutable.Seq.concat(headers))
     Source.single((request, 0)).via(connectionFlow).runWith(Sink.head).map {
       case (response, _) => response.get
@@ -57,6 +57,15 @@ class HttpFetcherImpl(baseUrl: URL)(implicit val system: ActorSystem,
     val url = s"${baseUrl.getPath}${path}"
     system.log.debug("Making PUT request to {}{} with {}", baseUrl.getHost, url, payload)
     val request = RequestBuilding.Put(url, payload).withHeaders(scala.collection.immutable.Seq.concat(headers))
+    Source.single((request, 0)).via(connectionFlow).runWith(Sink.head).map {
+      case (response, _) => response.get
+    }
+  }
+
+  def delete(path: String, headers: Seq[HttpHeader] = Seq()): Future[HttpResponse] = {
+    val url = s"${baseUrl.getPath}${path}"
+    system.log.debug("Making DELETE request to {}{}", baseUrl.getHost, url)
+    val request = RequestBuilding.Get(url).withHeaders(scala.collection.immutable.Seq.concat(headers))
     Source.single((request, 0)).via(connectionFlow).runWith(Sink.head).map {
       case (response, _) => response.get
     }
