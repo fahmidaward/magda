@@ -2,6 +2,7 @@ import * as express from "express";
 import * as yargs from "yargs";
 
 import createApiRouter from "./createApiRouter";
+import createOpaRouter from "./createOpaRouter";
 import Database from "./Database";
 import addJwtSecretFromEnvVar from "@magda/typescript-common/dist/session/addJwtSecretFromEnvVar";
 
@@ -25,9 +26,24 @@ const argv = addJwtSecretFromEnvVar(
             type: "number",
             default: 5432
         })
+        .option("opaUrl", {
+            describe: "The access endpoint URL of the Open Policy Agent",
+            type: "string",
+            default: "http://localhost:8181/"
+        })
+        .option("registryApiUrl", {
+            describe: "The access endpoint URL of the Registry API",
+            type: "string",
+            default: "http://localhost:6101/v0"
+        })
         .option("jwtSecret", {
             describe: "The shared secret for intra-network communication",
             type: "string"
+        })
+        .option("tenantId", {
+            describe: "The tenant id for intra-network communication",
+            type: "number",
+            default: 0
         }).argv
 );
 
@@ -35,14 +51,28 @@ const argv = addJwtSecretFromEnvVar(
 var app = express();
 app.use(require("body-parser").json());
 
+const database = new Database({
+    dbHost: argv.dbHost,
+    dbPort: argv.dbPort
+});
+
 app.use(
     "/v0",
     createApiRouter({
         jwtSecret: argv.jwtSecret,
-        database: new Database({
-            dbHost: argv.dbHost,
-            dbPort: argv.dbPort
-        })
+        registryApiUrl: argv.registryApiUrl,
+        opaUrl: argv.opaUrl,
+        database,
+        tenantId: argv.tenantId
+    })
+);
+
+app.use(
+    "/v0/opa",
+    createOpaRouter({
+        opaUrl: argv.opaUrl,
+        jwtSecret: argv.jwtSecret,
+        database
     })
 );
 

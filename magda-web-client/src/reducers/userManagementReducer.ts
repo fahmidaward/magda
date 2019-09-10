@@ -1,7 +1,53 @@
 import { Action } from "../types";
 
-const initialData = {
-    user: null,
+type Role = {
+    id: string;
+    name: string;
+    description: string;
+    permissionIds: string[];
+};
+
+export type User = {
+    id: string;
+    displayName: string;
+    email: string;
+    photoURL: string;
+    source: string;
+    isAdmin: boolean;
+    roles: Role[];
+    permissions: any[];
+    orgUnitId?: string;
+};
+
+const defaultUserInfo: User = {
+    id: "",
+    displayName: "Anonymous User",
+    email: "",
+    photoURL: "",
+    source: "",
+    isAdmin: false,
+    roles: [
+        {
+            id: "00000000-0000-0001-0000-000000000000",
+            name: "Anonymous Users",
+            description: "Default role for unauthenticated users",
+            permissionIds: []
+        }
+    ],
+    permissions: []
+};
+
+type UserManagementState = {
+    user: User;
+    isFetchingWhoAmI: boolean;
+    whoAmIError: Error | null;
+    providers: any[];
+    isFetchingProviders: boolean;
+    providersError?: Error | null;
+};
+
+const initialData: UserManagementState = {
+    user: { ...defaultUserInfo },
     isFetchingWhoAmI: false,
     whoAmIError: null,
     providers: [],
@@ -9,30 +55,27 @@ const initialData = {
     providersError: null
 };
 
-const userManagementMapping = (state = initialData, action: Action) => {
+const userManagementMapping = (
+    state: UserManagementState = initialData,
+    action: Action
+) => {
     switch (action.type) {
         case "REQUEST_WHO_AM_I":
             return Object.assign({}, state, {
                 isFetchingWhoAmI: true,
                 whoAmIError: null
             });
-        case "RECEIVE_WHO_AM_I_SIGNED_IN":
+        case "RECEIVE_WHO_AM_I_USER_INFO":
             return Object.assign({}, state, {
                 isFetchingWhoAmI: false,
                 whoAmIError: null,
                 user: action.user
             });
-        case "RECEIVE_WHO_AM_I_SIGNED_OUT":
-            return Object.assign({}, state, {
-                isFetchingWhoAmI: false,
-                whoAmIError: null,
-                user: null
-            });
         case "RECEIVE_WHO_AM_I_ERROR":
             return Object.assign({}, state, {
                 isFetchingWhoAmI: false,
                 whoAmIError: action.err,
-                user: null
+                user: { ...defaultUserInfo }
             });
         case "REQUEST_SIGN_OUT":
             return Object.assign({}, state, {
@@ -41,7 +84,7 @@ const userManagementMapping = (state = initialData, action: Action) => {
         case "COMPLETED_SIGN_OUT":
             return Object.assign({}, state, {
                 isSigningOut: false,
-                user: null
+                user: { ...defaultUserInfo }
             });
         case "SIGN_OUT_ERROR":
             return Object.assign({}, state, {

@@ -3,6 +3,7 @@ import * as sinon from "sinon";
 import * as request from "supertest";
 import * as express from "express";
 import addJwtSecretFromEnvVar from "@magda/typescript-common/dist/session/addJwtSecretFromEnvVar";
+import { MAGDA_ADMIN_PORTAL_ID } from "@magda/typescript-common/dist/registry/TenantConsts";
 import buildJwt from "@magda/typescript-common/dist/session/buildJwt";
 import fakeArgv from "@magda/typescript-common/dist/test/fakeArgv";
 import createApiRouter from "../createApiRouter";
@@ -44,7 +45,14 @@ describe("Auth api router", function(this: Mocha.ISuiteCallbackContext) {
     function buildExpressApp() {
         const apiRouter = createApiRouter({
             jwtSecret: argv.jwtSecret,
-            database: new mockDatabase() as Database
+            database: new mockDatabase() as Database,
+            opaUrl: process.env["OPA_URL"]
+                ? process.env["OPA_URL"]
+                : "http://localhost:8181/",
+            registryApiUrl: process.env["REGISTRY_API_URL"]
+                ? process.env["REGISTRY_API_URL"]
+                : "http://localhost:6101/v0",
+            tenantId: MAGDA_ADMIN_PORTAL_ID
         });
 
         const app = express();
@@ -493,8 +501,20 @@ describe("Auth api router", function(this: Mocha.ISuiteCallbackContext) {
                             expect(res.status).to.equal(200);
                             expect(res.body).to.be.a("object");
                             expect(res.body.id).to.be.a("string");
+
+                            const {
+                                roles,
+                                permissions,
+                                managingOrgUnitIds,
+                                orgUnit,
+                                orgUnitId,
+                                ...bodyUserData
+                            } = res.body;
+
+                            expect(res.body.roles).to.be.a("array");
+                            expect(res.body.permissions).to.be.a("array");
                             expect({ id: userId, ...userData }).to.deep.include(
-                                res.body
+                                bodyUserData
                             );
 
                             return true;

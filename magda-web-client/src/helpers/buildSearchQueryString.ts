@@ -2,23 +2,26 @@ import defined from "./defined";
 import flatten from "lodash/flatten";
 import { defaultConfiguration } from "../config";
 
-type Query = {
-    q: string;
-    dateFrom: string;
-    dateTo: string;
+export type Query = {
+    q?: string;
+    dateFrom?: string;
+    dateTo?: string;
     publisher?: string | Array<string>;
     organisation?: string | Array<string>;
-    format: string | Array<string>;
-    regionId: string;
-    regionType: string;
-    page: number;
+    format?: string | Array<string>;
+    regionId?: string;
+    regionType?: string;
+    page?: number;
     start?: number;
     limit?: number;
+    publishingState?: string | Array<string>;
 };
 
 export default function buildSearchQueryString(
     query: Query,
-    searchResultsPerPage?
+    searchResultsPerPage: number = defined(query.limit)
+        ? query.limit!
+        : defaultConfiguration.searchResultsPerPage
 ) {
     let keywords = queryToString("query", query.q);
     let dateFroms = queryToString("dateFrom", query.dateFrom);
@@ -33,15 +36,12 @@ export default function buildSearchQueryString(
         queryToLocation(query.regionId, query.regionType)
     );
 
-    searchResultsPerPage = defined(searchResultsPerPage)
-        ? searchResultsPerPage
-        : defined(query.limit)
-        ? query.limit
-        : defaultConfiguration.searchResultsPerPage;
+    let startIndex = query.page ? (query.page - 1) * searchResultsPerPage : 0;
 
-    let startIndex = defined(query.page)
-        ? (query.page - 1) * searchResultsPerPage
-        : 0;
+    let publishingState = queryToString(
+        "publishingState",
+        query.publishingState
+    );
 
     let queryArr = flatten([
         keywords,
@@ -51,7 +51,8 @@ export default function buildSearchQueryString(
         formats,
         locations,
         "start=" + startIndex,
-        "limit=" + (searchResultsPerPage + 1) // we get one more than we need so we can see what the score of the item at the top of the next page is
+        "limit=" + (searchResultsPerPage + 1), // we get one more than we need so we can see what the score of the item at the top of the next page is
+        publishingState
     ]);
 
     return queryArr.join("&");

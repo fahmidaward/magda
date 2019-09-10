@@ -1,7 +1,7 @@
-import Publisher from "./Components/SearchFacets/Publisher";
-import Format from "./Components/SearchFacets/Format";
-import Region from "./Components/SearchFacets/Region";
-import Temporal from "./Components/SearchFacets/Temporal";
+import Publisher from "./Components/Dataset/Search/Facets/Publisher";
+import Format from "./Components/Dataset/Search/Facets/Format";
+import Region from "./Components/Dataset/Search/Facets/Region";
+import Temporal from "./Components/Dataset/Search/Facets/Temporal";
 
 declare global {
     interface Window {
@@ -40,9 +40,16 @@ const serverConfig: {
     featureFlags?: {
         [id: string]: boolean;
     };
+    vocabularyApiEndpoints: string[];
+    defaultOrganizationId?: string;
+    defaultContactEmail?: string;
+    custodianOrgLevel: number;
 } = window.magda_server_config || {};
 
-const registryApiUrl =
+const registryReadOnlyApiUrl =
+    serverConfig.registryApiBaseUrl ||
+    fallbackApiHost + "api/v0/registry-read-only/";
+const registryFullApiUrl =
     serverConfig.registryApiBaseUrl || fallbackApiHost + "api/v0/registry/";
 
 const previewMapUrl =
@@ -66,6 +73,16 @@ const fetchOptions: RequestInit =
 const contentApiURL =
     serverConfig.contentApiBaseUrl || fallbackApiHost + "api/v0/content/";
 
+const vocabularyApiEndpoints =
+    Array.isArray(serverConfig.vocabularyApiEndpoints) &&
+    serverConfig.vocabularyApiEndpoints.length
+        ? serverConfig.vocabularyApiEndpoints
+        : // --- default endpoints
+          [
+              "https://vocabs.ands.org.au/repository/api/lda/abares/australian-land-use-and-management-classification/version-8/concept.json",
+              "https://vocabs.ands.org.au/repository/api/lda/ands-nc/controlled-vocabulary-for-resource-type-genres/version-1-1/concept.json"
+          ];
+
 export const config = {
     fetchOptions,
     homePageConfig: homePageConfig,
@@ -74,7 +91,8 @@ export const config = {
     contentApiURL,
     searchApiUrl:
         serverConfig.searchApiBaseUrl || fallbackApiHost + "api/v0/search/",
-    registryApiUrl: registryApiUrl,
+    registryReadOnlyApiUrl: registryReadOnlyApiUrl,
+    registryFullApiUrl: registryFullApiUrl,
     adminApiUrl:
         serverConfig.adminApiBaseUrl || fallbackApiHost + "api/v0/admin/",
     authApiUrl: serverConfig.authApiBaseUrl || fallbackApiHost + "api/v0/auth/",
@@ -129,7 +147,13 @@ export const config = {
     gapiIds: serverConfig.gapiIds || [],
     featureFlags:
         serverConfig.featureFlags ||
-        (process.env.NODE_ENV === "development" ? DEV_FEATURE_FLAGS : {})
+        (process.env.NODE_ENV === "development" ? DEV_FEATURE_FLAGS : {}),
+    vocabularyApiEndpoints,
+    defaultOrganizationId: serverConfig.defaultOrganizationId,
+    defaultContactEmail: serverConfig.defaultContactEmail,
+    custodianOrgLevel: serverConfig.custodianOrgLevel
+        ? serverConfig.custodianOrgLevel
+        : 2
 };
 
 export const defaultConfiguration = {

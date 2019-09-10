@@ -26,6 +26,11 @@ case class RegionSearchResult(
   hitCount: Long,
   regions: List[Region])
 
+case class AutoCompleteQueryResult(
+  inputString: String,
+  suggestions: Seq[String],
+  errorMessage: Option[String] = None)
+
 case class OrganisationsSearchResult(
   query: Option[String],
   hitCount: Long,
@@ -57,7 +62,7 @@ trait Protocols extends DefaultJsonProtocol with Temporal.Protocols with misc.Pr
   implicit def queryRegionFilterValueFormat(implicit config: Config) = new FilterValueFormat[Region]()(apiRegionFormat, config)
   implicit def queryFormat(implicit config: Config) = {
     implicit val regionFormat = apiRegionFormat
-    jsonFormat7(Query.apply)
+    jsonFormat8(Query.apply)
   }
   implicit def searchResultFormat(implicit config: Config) = jsonFormat7(SearchResult.apply)
   implicit val regionSearchResultFormat = {
@@ -67,6 +72,7 @@ trait Protocols extends DefaultJsonProtocol with Temporal.Protocols with misc.Pr
   implicit val OrganisationsSearchResultFormat = {
     jsonFormat4(OrganisationsSearchResult.apply)
   }
+  implicit val AutoCompleteQueryResultFormat = jsonFormat3(AutoCompleteQueryResult.apply)
 }
 
 object Protocols extends Protocols {

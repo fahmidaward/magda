@@ -19,7 +19,8 @@ import baseSpec from "./baseSpec";
 const aspectArb = jsc.record({
     id: jsc.string,
     name: jsc.string,
-    jsonSchema: jsc.json
+    jsonSchema: jsc.json,
+    tenantId: jsc.string
 });
 
 baseSpec(
@@ -32,7 +33,14 @@ baseSpec(
     ) => {
         doStartupTest(
             "should register aspects",
-            ({ aspectDefs, registryScope, jwtSecret, userId, hook }) => {
+            ({
+                aspectDefs,
+                registryScope,
+                tenantScope,
+                jwtSecret,
+                userId,
+                hook
+            }) => {
                 aspectDefs.forEach(aspectDef => {
                     registryScope
                         .put(
@@ -49,12 +57,20 @@ baseSpec(
 
                 registryScope.get(/hooks\/.*/).reply(200, hook);
                 registryScope.post(/hooks\/.*/).reply(201, {});
+                tenantScope.get("/tenants").reply(200, []);
             }
         );
 
         doStartupTest(
             "should register hook if none exists",
-            ({ aspectDefs, registryScope, jwtSecret, userId, hook }) => {
+            ({
+                aspectDefs,
+                registryScope,
+                tenantScope,
+                jwtSecret,
+                userId,
+                hook
+            }) => {
                 registryScope
                     .put(/aspects\/.*/)
                     .times(aspectDefs.length)
@@ -85,12 +101,21 @@ baseSpec(
                     .get("/records")
                     .query(true)
                     .reply(200, { totalCount: 0, records: [], hasMore: false });
+
+                tenantScope.get("/tenants").reply(200, []);
             }
         );
 
         doStartupTest(
             "should resume hook if one already exists",
-            ({ aspectDefs, registryScope, jwtSecret, userId, hook }) => {
+            ({
+                aspectDefs,
+                registryScope,
+                tenantScope,
+                jwtSecret,
+                userId,
+                hook
+            }) => {
                 registryScope
                     .put(/aspects\/.*/)
                     .times(aspectDefs.length)
@@ -121,20 +146,21 @@ baseSpec(
                     .reply(201, {
                         lastEventIdReceived: 1
                     });
+
+                tenantScope.get("/tenants").reply(200, []);
             }
         );
 
         function doStartupTest(
             caption: string,
-            fn: (
-                x: {
-                    aspectDefs: AspectDefinition[];
-                    registryScope: nock.Scope;
-                    jwtSecret: string;
-                    userId: string;
-                    hook: WebHook;
-                }
-            ) => void
+            fn: (x: {
+                aspectDefs: AspectDefinition[];
+                registryScope: nock.Scope;
+                tenantScope: nock.Scope;
+                jwtSecret: string;
+                userId: string;
+                hook: WebHook;
+            }) => void
         ) {
             jsc.property(
                 caption,
@@ -142,25 +168,32 @@ baseSpec(
                 jsc.nestring,
                 lcAlphaNumStringArbNe,
                 lcAlphaNumStringArbNe,
+                lcAlphaNumStringArbNe,
                 jsc.array(jsc.nestring),
                 jsc.array(jsc.nestring),
                 lcAlphaNumStringArbNe,
                 lcAlphaNumStringArbNe,
                 jsc.integer(0, 10),
+                jsc.bool,
                 (
                     aspectDefs: AspectDefinition[],
                     id: string,
                     registryHost: string,
+                    tenantHost: string,
                     listenDomain: string,
                     aspects: string[],
                     optionalAspects: string[],
                     jwtSecret: string,
                     userId: string,
-                    concurrency: number
+                    concurrency: number,
+                    enableMultiTenant: boolean
                 ) => {
                     beforeEachProperty();
                     const registryUrl = `http://${registryHost}.com`;
                     const registryScope = nock(registryUrl); //.log(console.log);
+
+                    const tenantUrl = `http://${tenantHost}.com`;
+                    const tenantScope = nock(tenantUrl); //.log(console.log);
 
                     const internalUrl = `http://${listenDomain}.com:${listenPort()}`;
                     const hook = buildWebHook(
@@ -173,6 +206,7 @@ baseSpec(
                     fn({
                         aspectDefs,
                         registryScope,
+                        tenantScope,
                         jwtSecret,
                         userId,
                         hook
@@ -182,6 +216,8 @@ baseSpec(
                         argv: fakeArgv({
                             internalUrl,
                             registryUrl,
+                            enableMultiTenant,
+                            tenantUrl,
                             jwtSecret,
                             userId,
                             listenPort: listenPort()

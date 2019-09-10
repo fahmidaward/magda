@@ -1,7 +1,15 @@
 import mockUserDataStore from "@magda/typescript-common/dist/test/mockUserDataStore";
-import { User } from "@magda/typescript-common/dist/authorization-api/model";
+import {
+    User,
+    Role,
+    Permission
+} from "@magda/typescript-common/dist/authorization-api/model";
 import { Maybe } from "tsmonad";
+import * as sinon from "sinon";
 import arrayToMaybe from "@magda/typescript-common/dist/util/arrayToMaybe";
+import Database from "../Database";
+import NestedSetModelQueryer, { NodeRecord } from "../NestedSetModelQueryer";
+import * as pg from "pg";
 
 export default class MockDatabase {
     getUser(id: string): Promise<Maybe<User>> {
@@ -47,6 +55,18 @@ export default class MockDatabase {
         });
     }
 
+    async getUserRoles(id: string): Promise<Role[]> {
+        return [];
+    }
+
+    async getUserPermissions(id: string): Promise<Permission[]> {
+        return [];
+    }
+
+    async getRolePermissions(id: string): Promise<Permission[]> {
+        return [];
+    }
+
     createUser(user: User): Promise<User> {
         return new Promise(function(resolve, reject) {
             resolve(mockUserDataStore.createRecord(user));
@@ -54,4 +74,35 @@ export default class MockDatabase {
     }
 
     check() {}
+
+    async getCurrentUserInfo(req: any, jwtSecret: string): Promise<User> {
+        const db = sinon.createStubInstance(Database);
+        db.getUserPermissions.callsFake(this.getUserPermissions);
+        db.getRolePermissions.callsFake(this.getRolePermissions);
+        db.getUserRoles.callsFake(this.getUserRoles);
+        db.getUser.callsFake(this.getUser);
+        db.getCurrentUserInfo.callThrough();
+        return await db.getCurrentUserInfo(req, jwtSecret);
+    }
+
+    getOrgQueryer() {
+        const orgQueryer: NestedSetModelQueryer = {
+            getNodeById: async (
+                id: string,
+                fields: string[] = null,
+                client: pg.Client = null
+            ): Promise<Maybe<NodeRecord>> => {
+                return Promise.resolve(Maybe.nothing());
+            },
+            getAllChildren: (
+                parentNodeId: string,
+                includeMyself: boolean = false,
+                fields: string[] = null,
+                client: pg.Client = null
+            ): Promise<NodeRecord[]> => {
+                return Promise.resolve([]);
+            }
+        } as NestedSetModelQueryer;
+        return orgQueryer;
+    }
 }

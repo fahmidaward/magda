@@ -43,7 +43,7 @@ yarn install
 Once the above prerequisites are in place, and the npm dependencies are installed, building MAGDA is easy. From the MAGDA root directory, simply run:
 
 ```bash
-lerna run build --include-filtered-dependencies
+lerna run build --stream --concurrency=4 --include-filtered-dependencies
 ```
 
 You can also run the same command in an individual component's directory (i.e. `magda-whatever/`) to build just that component.
@@ -76,7 +76,7 @@ Now you can build the docker containers locally - this might take quite a while 
 
 ```bash
 eval $(minikube docker-env) # (If you haven't run this already)
-lerna run docker-build-local --include-filtered-dependencies
+lerna run docker-build-local --stream --concurrency=4 --include-filtered-dependencies
 ```
 
 ### Create the necessary secrets with the secret creation script
@@ -85,10 +85,27 @@ lerna run docker-build-local --include-filtered-dependencies
 yarn run create-secrets
 ```
 
+### Windows only: Set up a volume for Postgres data
+
+If you're using Docker Desktop on Windows, you'll need to set up a volume to store Postgres data because the standard strategy approach - a `hostpath` volume mapped to a Windows share - will result in file/directory permissions that are not to Postgres's liking. Instead, we'll set up a volume manually which is just a directory in the Docker Desktop VM's virtual disk. We use the unusual path of `/etc/kubernetes` because it is one of the few mount points backed by an actual virtual disk.
+
+```bash
+kubectl apply -f deploy/kubernetes/local-storage.yaml
+kubectl apply -f deploy/kubernetes/local-storage-volume.yaml
+```
+
+Note: If using docker desktop for Windows older than version 19, change the value from "docker-desktop" to "docker-for-desktop" in nodeAffinity in file deploy/kubernetes/local-storage-volume.yaml
+
 ### Install Magda on your minikube/docker-desktop cluster
 
 ```bash
-helm upgrade --install --timeout 9999999999 --wait -f deploy/helm/minikube-dev.yml magda deploy/helm/magda
+helm upgrade --install --timeout 9999 --wait -f deploy/helm/minikube-dev.yml magda deploy/helm/magda
+```
+
+If you're using Docker Desktop on Windows, add `-f deploy/helm/docker-desktop-windows.yml` too, i.e. do this instead of the above:
+
+```bash
+helm upgrade --install --timeout 9999 --wait -f deploy/helm/docker-desktop-windows.yml -f deploy/helm/minikube-dev.yml magda deploy/helm/magda
 ```
 
 This can take a while as it does a lot - downloading all the docker images, starting them up and running database migration jobs. You can see what's happening by opening another tab and running `kubectl get pods -w`.

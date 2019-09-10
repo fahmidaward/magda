@@ -1,7 +1,6 @@
 import minion from "@magda/minion-framework/dist/index";
 import onRecordFound from "./onRecordFound";
 import commonYargs from "@magda/minion-framework/dist/commonYargs";
-
 const ID = "minion-visualization";
 const argv = commonYargs(6311, "http://localhost:6311");
 

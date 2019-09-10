@@ -7,6 +7,7 @@ import request from "@magda/typescript-common/dist/request";
 
 import Registry from "@magda/typescript-common/dist/registry/RegistryClient";
 import coerceJson from "@magda/typescript-common/dist/coerceJson";
+import { MAGDA_ADMIN_PORTAL_ID } from "@magda/typescript-common/dist/registry/TenantConsts";
 
 import buildSitemapRouter from "./buildSitemapRouter";
 import getIndexFileContent from "./getIndexFileContent";
@@ -114,6 +115,26 @@ const argv = yargs
         type: "string",
         coerce: coerceJson("requestOpts"),
         default: "{}"
+    })
+    .option("vocabularyApiEndpoints", {
+        describe: "A list of Vocabulary API Endpoints",
+        type: "string",
+        coerce: coerceJson("vocabularyApiEndpoints"),
+        default: "[]"
+    })
+    .option("defaultOrganizationId", {
+        describe: "The id of a default organization to use for new datasets",
+        type: "string",
+        required: false
+    })
+    .option("defaultContactEmail", {
+        describe:
+            "Default contact email for users to report magda system errors",
+        type: "string"
+    })
+    .option("custodianOrgLevel", {
+        describe: "Data custodian org unit tree level",
+        type: "number"
     }).argv;
 
 var app = express();
@@ -186,7 +207,11 @@ const webServerConfig = {
     ),
     fallbackUrl: argv.fallbackUrl,
     gapiIds: argv.gapiIds,
-    featureFlags: argv.featureFlags || {}
+    featureFlags: argv.featureFlags || {},
+    vocabularyApiEndpoints: (argv.vocabularyApiEndpoints || []) as string[],
+    defaultOrganizationId: argv.defaultOrganizationId,
+    defaultContactEmail: argv.defaultContactEmail,
+    custodianOrgLevel: argv.custodianOrgLevel
 };
 
 app.get("/server-config.js", function(req, res) {
@@ -219,7 +244,10 @@ app.use(express.static(clientBuild));
 
 // URLs in this list will load index.html and be handled by React routing.
 const topLevelRoutes = [
+    "admin",
     "search",
+    "drafts",
+    "all-datasets",
     "feedback",
     "contact",
     "account",
@@ -283,12 +311,14 @@ app.use("/robots.txt", (_, res) => {
     res.status(200).send(robotsTxt);
 });
 
+// TODO: Use proper tenant id in multi-tenant mode.
 app.use(
     buildSitemapRouter({
         baseExternalUrl: argv.baseExternalUrl,
         registry: new Registry({
             baseUrl: argv.registryApiBaseUrlInternal,
-            maxRetries: 0
+            maxRetries: 0,
+            tenantId: MAGDA_ADMIN_PORTAL_ID
         })
     })
 );

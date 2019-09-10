@@ -89,18 +89,23 @@ baseSpec(
                         lcAlphaNumStringArbNe,
                         lcAlphaNumStringArbNe,
                         jsc.integer(1, 10),
+                        jsc.bool,
                         (
                             recordsBatches,
                             domain,
                             jwtSecret,
                             userId,
-                            concurrency
+                            concurrency,
+                            enableMultiTenant
                         ) => {
                             beforeEachProperty();
 
                             const registryDomain = "example";
                             const registryUrl = `http://${registryDomain}.com:80`;
                             const registryScope = nock(registryUrl);
+                            const tenantDomain = "tenant";
+                            const tenantUrl = `http://${tenantDomain}.com:80`;
+                            const tenantScope = nock(tenantUrl);
 
                             /** All records in all the batches */
                             const flattenedRecords = _.flatMap(
@@ -119,6 +124,8 @@ baseSpec(
                                 argv: fakeArgv({
                                     internalUrl,
                                     registryUrl,
+                                    enableMultiTenant,
+                                    tenantUrl,
                                     jwtSecret,
                                     userId,
                                     listenPort: listenPort()
@@ -159,6 +166,8 @@ baseSpec(
                                 }
                             });
                             registryScope.post(/\/hooks\/.*/).reply(201, {});
+
+                            tenantScope.get("/tenants").reply(200, []);
 
                             return minion(options)
                                 .then(() =>
@@ -217,7 +226,7 @@ baseSpec(
                                                 // The hook should only return 500 if it's failed synchronously.
                                                 .expect(
                                                     async ||
-                                                    batch.overallSuccess
+                                                        batch.overallSuccess
                                                         ? 201
                                                         : 500
                                                 )

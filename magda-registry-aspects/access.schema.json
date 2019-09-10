@@ -1,0 +1,16 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "title": "Dataset Access Instructions",
+    "description": "Provides information that users need to access the dataset.",
+    "type": "object",
+    "properties": {
+        "location": {
+            "title": "A text string represents the location of the dataset. Could be an URL, URI or a short text location description.",
+            "type": "string"
+        },
+        "notes": {
+            "title": "Any access considerations for users, such as permissions or restrictions they should be aware of.",
+            "type": "string"
+        }
+    }
+}

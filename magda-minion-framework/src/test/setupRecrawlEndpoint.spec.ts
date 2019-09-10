@@ -34,6 +34,8 @@ baseSpec(
                 argv: fakeArgv({
                     internalUrl: "example",
                     registryUrl: "example",
+                    enableMultiTenant: true,
+                    tenantUrl: "example",
                     jwtSecret: "jwtSecret",
                     userId: "userId",
                     listenPort: listenPort()
@@ -76,6 +78,8 @@ baseSpec(
                 argv: fakeArgv({
                     internalUrl: "example",
                     registryUrl: "example",
+                    enableMultiTenant: true,
+                    tenantUrl: "example",
                     jwtSecret: "jwtSecret",
                     userId: "userId",
                     listenPort: listenPort()
@@ -146,6 +150,8 @@ baseSpec(
                             argv: fakeArgv({
                                 internalUrl: "example",
                                 registryUrl: "example",
+                                enableMultiTenant: true,
+                                tenantUrl: "example",
                                 jwtSecret: "jwtSecret",
                                 userId: "userId",
                                 listenPort: listenPort()

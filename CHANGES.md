@@ -1,3 +1,129 @@
+## 0.0.56
+
+General:
+
+-   Add multi-tenant support. Deployed as single tenant by default.
+-   Add access control capability to registry api, only applying to some read operations currently.
+
+Registry:
+
+-   Changed database schema.
+-   Provide services based on Tenant IDs.
+-   Fixed PATCH request to registry won't trigger notification to webhook
+-   Moved provenance and information security information out of `dcat-dataset-strings`.
+-   Removed some unused fields from `dcat-dataset-strings` - it should now be back to looking more-or-less like DCAT.
+
+Gateway:
+
+-   Add tenant ID header to client requests.
+-   Add ArcGIS/ESRI Authentication provider, including support for on-premise instances of ArcGIS Portal.
+-   Add Vanguard (WS-FED) Authentication provider
+
+Search:
+
+-   Prevent freeText query from being None which will cause score to be 0
+-   Add tenant specific search.
+-   Fixed facet options (publishers) API error: Invalid aggregation name
+
+Indexer:
+
+-   Fixed indexer throws an error when temporalCoverage aspects intervals is an empty array
+-   Index datasets with tenant ID.
+-   Fixed indexer throws an error when affiliatedOrganisation field is created
+-   Fixed indexer incorrect parsing bounding box data in spatialCoverage aspect
+
+Cataloging:
+
+-   Added new aspects for publishing state and spatial coverage
+-   Updated Indexer and Search API to support publishingState
+-   Updated new dataset demo UI page to support adding new datasets
+-   Updated dataset ui page to be able to edit fields
+-   Added editor / editor type abstraction for making state management simpler for large forms.
+-   Added "Add Catalog" page
+
+UI:
+
+-   Made dataset page printer friendly
+-   Display search box placeholder text at a lower opacity while the field is in focus.
+-   Showed text message if there are no tags to display in a dataset page.
+-   Removed gap after data quality star rating
+-   Replaced star emoji in static page markdown with quality star icon
+-   Refactored web client to group similar things together
+-   Implemented basic admin pages in react ui
+-   Started implementing new add dataset flow design changes
+-   Fixed web-client code loaded & run twice
+-   Added basic spatial preview to add dataset
+-   Revised add dataset first metadata page for conformance with design
+-   Improved edit dataset page overall styling & editor behaviour
+-   Show Database ownership information on dataset page (Admin Only)
+-   Added vocabulary suggestion for keywords & themes input on new dataset page
+-   Extracted keyword will be filtered by vocabulary APIs
+-   New add dataset page design
+-   Added new progress meter
+-   New design for file upload area
+-   New dropdown box design on `Dataset details and contents` page
+-   New Design for Multiple Tags input for keywords & Themes on `Dataset details and contents` page
+-   New Design for Accrual Periodicity Recurrence input on `Dataset details and contents` page
+-   New Design Spatial area input on `Dataset details and contents` page
+-   New Design for text input & text area input on add dataset pages
+-   Next & save button style adjustment on add dataset pages
+-   Update pagination to meet WCAG and use correct semantic HTML tags.
+-   New Design for files review box on `Details and Content` page
+-   Moved dataset description to Details and Contents page & added `additional notes` text box to submit page
+-   Added words count to Textarea
+-   Adjusted tooltip style & layout
+-   Overall page layout adjustment for `Details and Content` page
+-   fixed: keywords & themes extraction might produce duplicate keywords for different files
+-   Restricted dataset contact point display options to team members, team or org and made it save in the registry.
+-   Added ability to set the owning org unit in Add Dataset flow.
+-   Stopped keywords & themes extraction producing duplicate keywords for different files
+-   Capped the maximum input to retext for keyword extraction to prevent browser freezeup
+-   Made all keywords extracted lower case
+-   Made extracted keywords fall back on non-vocabulary-filtered keywords if it doesn't find enough keywords matching the vocabulary.
+-   Style adjustment for question Who can see the dataset once it is published on Access and Use page
+-   Added access location auto complete input on Access and Use page
+-   Fixed a JS error which causes blank screen on Organisations Page
+-   Fixed: drop a folder to Add dataset file drop area will break the UI
+-   Show an error message screen if the user is not allowed to access the add dataset page
+-   Updated security classification & sensitivity questions according to the new design
+-   Make sure all publish new dataset errors are captured and shown to users on add dataset page
+-   Added Custodian field to the 'People and Production' page
+-   Added the ability to add references to datasets that a new dataset was derived from.
+
+Gateway:
+
+-   Add ArcGIS/ESRI Authentication provider, including support for on-premise instances of ArcGIS Portal.
+-   Add Vanguard (WS-FED) Authentication provider
+-   Made organisation field an autocomplete in add dataset page.
+-   Corrected Vanguard Authentication Landing Url
+-   Fixed Google oAuth Error: authRouter
+
+Access Control:
+
+-   Introduced Role & Permission Structure
+-   Recognise unauthenticated users as anonymous users role
+-   Introduced Open Policy Agent as policy evaluation engine
+-   Search API will return datasets based on user's Roles & Permissions
+-   Users with access to draft datasets can see a new `drafts` tab
+-   Organization hierarchy & make Organization hierarchy data available for access control
+-   Filter datasets based on user's current organization unit
+-   Added API to see what users will approve a potential dataset
+
+Others:
+
+-   Made registry-api DB pool settings configurable via Helm
+-   Make broken link sleuther recrawl period configurable via Helm
+-   Format minion will trust dcat format if other measures indicate a ZIP format
+-   Format minion will trust dcat format if other measures indicate a ESRI REST format
+-   Added ASC to 4 stars rating list
+-   Made registry-api DB pool settings configurable via Helm
+-   Make broken link sleuther recrawl period configurable via Helm
+-   Format minion will trust dcat format if other measures indicate a ZIP format
+-   Format minion will trust dcat format if other measures indicate a ESRI REST format
+-   Added ASC to 4 stars rating list
+-   Removed Travis CI (Gitlab CI still remains)
+-   Disabled tenant-api & tenant-db when `enableMultiTenants` = false
+
 ## 0.0.55
 
 UI:
@@ -19,6 +145,7 @@ Others:
 -   Added craco to allow for some Create React App overrides for a faster build and to allow use of PDFjs without warnings.
 -   Fixed Unable to use Google / Facebook Login on Preview Site
 -   Fixed warnings: `as` props is compulsory for AUpageAlert & boolean value was sent to `id` props
+-   Fixed docker build cache issue that causes DB image not build
 
 ## 0.0.54
 

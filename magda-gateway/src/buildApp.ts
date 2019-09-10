@@ -19,6 +19,7 @@ import createHttpsRedirectionMiddleware from "./createHttpsRedirectionMiddleware
 import Authenticator from "./Authenticator";
 import defaultConfig from "./defaultConfig";
 import { ProxyTarget } from "./createApiRouter";
+import setupTenantMode from "./setupTenantMode";
 
 // Tell typescript about the semi-private __express field of ejs.
 declare module "ejs" {
@@ -62,13 +63,24 @@ type Config = {
     googleClientSecret?: string;
     aafClientUri?: string;
     aafClientSecret?: string;
+    arcgisClientId?: string;
+    arcgisClientSecret?: string;
+    arcgisInstanceBaseUrl?: string;
     ckanUrl?: string;
     enableCkanRedirection?: boolean;
     ckanRedirectionDomain?: string;
     ckanRedirectionPath?: string;
+    fetchTenantsMinIntervalInMs?: number;
+    tenantUrl?: string;
+    enableMultiTenants?: boolean;
+    vanguardWsFedIdpUrl?: string;
+    vanguardWsFedRealm?: string;
+    vanguardWsFedCertificate?: string;
 };
 
 export default function buildApp(config: Config) {
+    const tenantMode = setupTenantMode(config);
+
     const routes = _.isEmpty(config.proxyRoutesJson)
         ? defaultConfig.proxyRoutes
         : ((config.proxyRoutesJson as unknown) as Routes);
@@ -94,6 +106,14 @@ export default function buildApp(config: Config) {
     _.forEach(
         (config.proxyRoutesJson as unknown) as Routes,
         (value: any, key: string) => {
+            // --- skip tenant api status prob if multiTenantsMode is off
+            if (key === "tenant" && !tenantMode.multiTenantsMode) {
+                return;
+            }
+            // --- skip install status probs if statusCheck == false
+            if (value && value.statusCheck === false) {
+                return;
+            }
             probes[key] = createServiceProbe(value.to);
         }
     );
@@ -152,10 +172,16 @@ export default function buildApp(config: Config) {
                 googleClientSecret: config.googleClientSecret,
                 aafClientUri: config.aafClientUri,
                 aafClientSecret: config.aafClientSecret,
+                arcgisClientId: config.arcgisClientId,
+                arcgisClientSecret: config.arcgisClientSecret,
+                arcgisInstanceBaseUrl: config.arcgisInstanceBaseUrl,
                 ckanUrl: config.ckanUrl,
                 authorizationApi: config.authorizationApi,
                 externalUrl: config.externalUrl,
-                userId: config.userId
+                userId: config.userId,
+                vanguardWsFedIdpUrl: config.vanguardWsFedIdpUrl,
+                vanguardWsFedRealm: config.vanguardWsFedRealm,
+                vanguardWsFedCertificate: config.vanguardWsFedCertificate
             })
         );
     }
@@ -165,10 +191,11 @@ export default function buildApp(config: Config) {
         createApiRouter({
             authenticator: authenticator,
             jwtSecret: config.jwtSecret,
-            routes
+            routes,
+            tenantMode
         })
     );
-    app.use("/preview-map", createGenericProxy(config.previewMap));
+    app.use("/preview-map", createGenericProxy(config.previewMap, tenantMode));
 
     if (config.enableCkanRedirection) {
         if (!routes.registry) {
@@ -180,14 +207,15 @@ export default function buildApp(config: Config) {
                 createCkanRedirectionRouter({
                     ckanRedirectionDomain: config.ckanRedirectionDomain,
                     ckanRedirectionPath: config.ckanRedirectionPath,
-                    registryApiBaseUrlInternal: routes.registry.to
+                    registryApiBaseUrlInternal: routes.registry.to,
+                    tenantId: 0 // FIXME: Rather than being hard-coded to the default tenant, the CKAN router needs to figure out the correct tenant.
                 })
             );
         }
     }
 
     // Proxy any other URL to magda-web
-    app.use("/", createGenericProxy(config.web));
+    app.use("/", createGenericProxy(config.web, tenantMode));
 
     return app;
 }

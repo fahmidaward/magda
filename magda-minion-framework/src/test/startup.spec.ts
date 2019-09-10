@@ -30,26 +30,33 @@ baseSpec(
         jsc.property(
             "should properly crawl existing records if no webhook was found",
             lcAlphaNumStringArbNe,
+            lcAlphaNumStringArbNe,
             jsc.array(jsc.nestring),
             jsc.array(jsc.nestring),
             jsc.array(recordArb),
             jsc.suchthat(jsc.integer, int => int > 0),
             lcAlphaNumStringArbNe,
             lcAlphaNumStringArbNe,
+            jsc.bool,
             (
                 registryHost,
+                tenantHost,
                 aspects,
                 optionalAspects,
                 records,
                 pageSize,
                 jwtSecret,
-                userId
+                userId,
+                enableMultiTenant
             ) => {
                 beforeEachProperty();
                 const registryUrl = `http://${registryHost}.com`;
+                const tenantUrl = `http://${tenantHost}.com`;
                 const registryScope = nock(registryUrl);
+                const tenantScope = nock(tenantUrl);
                 registryScope.get(/\/hooks\/.*/).reply(404);
                 registryScope.put(/\/hooks\/.*/).reply(201);
+                tenantScope.get("/tenants").reply(200, []);
 
                 let index = 0;
                 const pages = _.groupBy(records, (element: any) => {
@@ -97,6 +104,8 @@ baseSpec(
                     argv: fakeArgv({
                         internalUrl: `http://example.com`,
                         registryUrl,
+                        enableMultiTenant,
+                        tenantUrl,
                         jwtSecret,
                         userId,
                         listenPort: listenPort()
@@ -141,6 +150,7 @@ baseSpec(
             aspects: string[];
             optionalAspects: string[];
             concurrency: number;
+            enableMultiTenant: boolean;
         };
 
         jsc.property(
@@ -155,7 +165,8 @@ baseSpec(
                     jwtSecret: lcAlphaNumStringArb,
                     userId: lcAlphaNumStringArb,
                     registryUrl: lcAlphaNumStringArb,
-                    concurrency: jsc.integer(0, 10)
+                    concurrency: jsc.integer(0, 10),
+                    enableMultiTenant: jsc.bool
                 }),
                 (record: input) =>
                     record.port <= 0 ||
@@ -176,7 +187,8 @@ baseSpec(
                 optionalAspects,
                 jwtSecret,
                 userId,
-                concurrency
+                concurrency,
+                enableMultiTenant
             }: input) => {
                 beforeEachProperty();
 
@@ -185,6 +197,8 @@ baseSpec(
                         internalUrl: internalUrl,
                         listenPort: port,
                         registryUrl: "",
+                        enableMultiTenant,
+                        tenantUrl: "",
                         jwtSecret,
                         userId
                     }),
