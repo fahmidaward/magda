@@ -1,7 +1,7 @@
 package au.csiro.data61.magda.registry
 
 import _root_.au.csiro.data61.magda.model.{
-  RegistryProtocols => CommonRegistryProtocols,
+  RegistryProtocols => CommonRegistryProtocols
 }
 import _root_.au.csiro.data61.magda.model.RegistryModel._
 import gnieh.diffson.sprayJson._

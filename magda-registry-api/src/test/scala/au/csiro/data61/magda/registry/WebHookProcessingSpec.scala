@@ -2067,7 +2067,7 @@ class WebHookProcessingSpec
   ) = {
     Util.waitUntilAllDone(200)
 
-    payloads.length.shouldBe(payloadsSize, )
+    payloads.length shouldBe payloadsSize
     val events = payloads.foldLeft[List[RegistryEvent]](Nil)(
       (a, payload) => a ++ payload.events.get
     )

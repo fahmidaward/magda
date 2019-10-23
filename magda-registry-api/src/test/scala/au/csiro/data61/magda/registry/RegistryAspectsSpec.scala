@@ -1,7 +1,10 @@
 package au.csiro.data61.magda.registry
 
 import akka.http.scaladsl.model.StatusCodes
-import _root_.au.csiro.data61.magda.model.RegistryModel.{AspectDefinition, Record}
+import _root_.au.csiro.data61.magda.model.RegistryModel.{
+  AspectDefinition,
+  Record
+}
 import spray.json.{JsObject, JsonParser}
 
 import scala.io.BufferedSource
