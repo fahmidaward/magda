@@ -5,7 +5,11 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import scala.concurrent.ExecutionContext
-import au.csiro.data61.magda.model.RegistryModel.{WebHook, EventType, WebHookConfig}
+import au.csiro.data61.magda.model.RegistryModel.{
+  WebHook,
+  EventType,
+  WebHookConfig
+}
 import au.csiro.data61.magda.client.RegistryExternalInterface
 import au.csiro.data61.magda.model.RegistryModel.RegistryConstants
 import akka.event.LoggingAdapter

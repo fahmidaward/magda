@@ -62,7 +62,7 @@ trait BaseApiSpec
       )
   override def createActorSystem(): ActorSystem =
     ActorSystem("BaseApiSpec", config)
-  
+
   implicit val indexedRegions: List[(RegionSource, JsObject)] =
     BaseApiSpec.indexedRegions
 

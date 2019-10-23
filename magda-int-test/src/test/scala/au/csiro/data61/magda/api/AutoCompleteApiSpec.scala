@@ -13,9 +13,7 @@ import org.scalacheck.Gen
 
 import scala.collection.mutable
 
-class AutoCompleteApiSpec
-    extends BaseSearchApiSpec
-    with BeforeAndAfterAll {
+class AutoCompleteApiSpec extends BaseSearchApiSpec with BeforeAndAfterAll {
 
   override def afterAll {
     super.afterAll

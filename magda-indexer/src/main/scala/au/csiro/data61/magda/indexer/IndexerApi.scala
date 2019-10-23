@@ -12,7 +12,7 @@ import com.typesafe.config.Config
 class IndexerApi(crawler: Crawler, indexer: SearchIndexer)(
     implicit system: ActorSystem,
     config: Config
-) extends BaseMagdaApi{
+) extends BaseMagdaApi {
   implicit val ec = system.dispatcher
   override def getLogger = system.log
 

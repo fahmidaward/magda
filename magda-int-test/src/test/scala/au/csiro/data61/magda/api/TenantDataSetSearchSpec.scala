@@ -7,8 +7,7 @@ import au.csiro.data61.magda.api.model.SearchResult
 import au.csiro.data61.magda.model.RegistryConverters._
 import au.csiro.data61.magda.test.util.MagdaMatchers
 
-class TenantDataSetSearchSpec
-    extends BaseSearchApiSpec {
+class TenantDataSetSearchSpec extends BaseSearchApiSpec {
   blockUntilNotRed()
 
   describe("searching") {
