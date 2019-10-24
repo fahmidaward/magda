@@ -32,7 +32,7 @@ libraryDependencies ++= {
     "org.apache.logging.log4j" % "log4j-api" % "2.9.1",
 
     "com.beachape" %% "enumeratum" % "1.5.10",
-    "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.1.0",
+    "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.0.0",
     "io.swagger" % "swagger-jaxrs" % swaggerVersion,
     // "io.swagger" % "swagger-core" % swaggerVersion,
     // "io.swagger" % "swagger-annotations" % swaggerVersion,
