@@ -297,7 +297,7 @@ class RecordsService(
       new ApiImplicitParam(
         name = "record",
         required = true,
-        dataType = "au.csiro.data61.magda.model.Registry$Record",
+        dataType = "au.csiro.data61.magda.model.RegistryModel$Record",
         paramType = "body",
         value = "The record to save."
       ),
@@ -486,7 +486,7 @@ class RecordsService(
       new ApiImplicitParam(
         name = "record",
         required = true,
-        dataType = "au.csiro.data61.magda.model.Registry$Record",
+        dataType = "au.csiro.data61.magda.model.RegistryModel$Record",
         paramType = "body",
         value = "The definition of the new record."
       ),

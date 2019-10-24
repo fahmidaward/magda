@@ -68,7 +68,7 @@ class AspectsService(
       new ApiImplicitParam(
         name = "aspect",
         required = true,
-        dataType = "au.csiro.data61.magda.model.Registry$AspectDefinition",
+        dataType = "au.csiro.data61.magda.model.RegistryModel$AspectDefinition",
         paramType = "body",
         value = "The definition of the new aspect."
       ),
@@ -159,7 +159,7 @@ class AspectsService(
       new ApiImplicitParam(
         name = "aspect",
         required = true,
-        dataType = "au.csiro.data61.magda.model.Registry$AspectDefinition",
+        dataType = "au.csiro.data61.magda.model.RegistryModel$AspectDefinition",
         paramType = "body",
         value = "The aspect to save."
       ),

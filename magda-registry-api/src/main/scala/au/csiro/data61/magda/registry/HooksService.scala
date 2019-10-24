@@ -200,7 +200,7 @@ class HooksService(
       new ApiImplicitParam(
         name = "hook",
         required = true,
-        dataType = "au.csiro.data61.magda.model.Registry$WebHook",
+        dataType = "au.csiro.data61.magda.model.RegistryModel$WebHook",
         paramType = "body",
         value = "The definition of the new web hook."
       ),
@@ -411,7 +411,7 @@ class HooksService(
       new ApiImplicitParam(
         name = "hook",
         required = true,
-        dataType = "au.csiro.data61.magda.model.Registry$WebHook",
+        dataType = "au.csiro.data61.magda.model.RegistryModel$WebHook",
         paramType = "body",
         value = "The web hook to save."
       ),
@@ -566,7 +566,7 @@ class HooksService(
       new ApiImplicitParam(
         name = "acknowledgement",
         required = true,
-        dataType = "au.csiro.data61.magda.model.Registry$WebHookAcknowledgement",
+        dataType = "au.csiro.data61.magda.model.RegistryModel$WebHookAcknowledgement",
         paramType = "body",
         value = "The details of the acknowledgement."
       ),

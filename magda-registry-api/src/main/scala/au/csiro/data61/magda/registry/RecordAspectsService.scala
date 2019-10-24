@@ -92,7 +92,7 @@ class RecordAspectsService(
       new ApiImplicitParam(
         name = "aspect",
         required = true,
-        dataType = "au.csiro.data61.magda.model.Registry$Aspect",
+        dataType = "au.csiro.data61.magda.model.RegistryModel$Aspect",
         paramType = "body",
         value = "The record aspect to save."
       ),
