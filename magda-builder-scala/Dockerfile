@@ -20,8 +20,8 @@ RUN { \
 ENV JAVA_HOME /usr/lib/jvm/java-1.8-openjdk
 ENV PATH $PATH:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin
 
-ENV JAVA_VERSION 8u222
-ENV JAVA_ALPINE_VERSION 8.222.10-r0
+ENV JAVA_VERSION 8u212
+ENV JAVA_ALPINE_VERSION 8.212.04-r0
 
 RUN set -x \
 	&& apk add --no-cache openjdk8="$JAVA_ALPINE_VERSION" \
@@ -36,6 +36,6 @@ ENV PATH ${PATH}:${SBT_HOME}/bin
 # Install sbt
 RUN mkdir -p "$SBT_HOME" && \
     apk add --no-cache --update wget bash nss && \
-    wget -qO - --no-check-certificate "http://dl.bintray.com/sbt/native-packages/sbt/$SBT_VERSION/sbt-$SBT_VERSION.tgz" | tar xz -C $SBT_HOME --strip-components=1 && \
+    wget -qO - --no-check-certificate "https://piccolo.link/sbt-$SBT_VERSION.tgz" | tar xz -C $SBT_HOME --strip-components=1 && \
     apk del wget && \
 	sbt sbtVersion
