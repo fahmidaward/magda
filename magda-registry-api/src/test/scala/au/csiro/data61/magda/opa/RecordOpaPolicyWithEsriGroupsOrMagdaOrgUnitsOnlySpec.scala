@@ -5,7 +5,7 @@ import au.csiro.data61.magda.model.Registry._
 import au.csiro.data61.magda.registry._
 import spray.json._
 
-abstract class RecordOpaPolicyWithEsirGroupsOrMagdaOrgUnitsOnlySpec
+abstract class RecordOpaPolicyWithEsriGroupsOrMagdaOrgUnitsOnlySpec
     extends ApiWithOpa {
 
   describe("should authorize non-link aspect query") {
@@ -25,12 +25,17 @@ abstract class RecordOpaPolicyWithEsirGroupsOrMagdaOrgUnitsOnlySpec
             case (record, recordIndex) =>
               val recordId = record.id
 
+              // println(userId)
               Get(s"/v0/records/$recordId/aspects/$organizationId") ~> addTenantIdHeader(
                 TENANT_0
               ) ~> addJwtToken(userId) ~> param
                 .api(Full)
                 .routes ~> check {
                 val theResponse = responseAs[Option[JsObject]]
+
+                println(s"user $userId trying to access $recordId, should be ${expectedRecordIndexes
+                  .contains(recordIndex)}, is $status")
+
                 if (expectedRecordIndexes.contains(recordIndex)) {
                   status shouldBe StatusCodes.OK
                   foundRecordsCounter = foundRecordsCounter + 1
@@ -642,6 +647,7 @@ abstract class RecordOpaPolicyWithEsirGroupsOrMagdaOrgUnitsOnlySpec
         status shouldBe StatusCodes.OK
         val record = responseAs[Record]
         record.id shouldBe referencingRecordId
+        println(record)
         record
           .aspects(withLinkId)
           .fields(linkName) shouldEqual JsObject.empty

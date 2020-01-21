@@ -4,15 +4,20 @@ const jwt = require("jsonwebtoken");
 
 export function getUserId(req: Request, jwtSecret: string): Maybe<string> {
     const jwtToken = req.header("X-Magda-Session");
+    console.log(jwtToken);
+    console.log(jwtSecret);
 
     if (jwtToken) {
         try {
-            const { userId } = jwt.verify(jwtToken, jwtSecret);
-            return Maybe.just(userId);
+            const jwtPayload = jwt.verify(jwtToken, jwtSecret);
+            console.log(JSON.stringify(jwtPayload, null, 2));
+            return Maybe.just(jwtPayload.userId);
         } catch (e) {
+            console.error(e);
             return Maybe.nothing<string>();
         }
     } else {
+        console.log("nothing");
         return Maybe.nothing<string>();
     }
 }
