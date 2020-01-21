@@ -38,3 +38,43 @@ mandatoryFields:
   - files.license
   - informationSecurity.classification
   - informationSecurity.disseminationLimits
+dateConfig:
+  dateFormats:
+    - YYYY
+    - YYYY-MM
+    - DD-MM-YYYY
+    - MM-DD-YYYY
+    - YYYY-MM-DD
+    - YYYY-MM-DDThh:mmTZD
+    - YYYY-MM-DDThh:mm:ssTZD
+    - YYYY-MM-DDThh:mm:ss.sTZD
+    - DD-MMM-YYYY
+    - MMM-DD-YYYY
+  dateRegexes:
+      dateRegex: "(date|dt|year|decade)"
+      startDateRegex: "(start|st).*(date|dt|year|decade)"
+      endDateRegex: "(end).*(date|dt|year|decade)"
+datasetThemes: []
+noManualThemes: false
+noManualKeywords: false
+keywordsBlackList:
+  - Mr
+  - Ms
+  - Mrs
+  - Miss
+  - Dr
+  - Hon
+  - Jr
+  - Prof
+  - Sr
+  - St
+  - Mr.
+  - Ms.
+  - Mrs.
+  - Miss.
+  - Dr.
+  - Hon.
+  - Jr.
+  - Prof.
+  - Sr.
+  - St.

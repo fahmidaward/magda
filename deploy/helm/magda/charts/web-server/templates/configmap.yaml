@@ -19,6 +19,11 @@ data:
     {{- end }}
     "custodianOrgLevel": {{ toJson .Values.custodianOrgLevel | quote }},
     "automaticPreviewMaxFileSize": {{ toJson .Values.automaticPreviewMaxFileSize | quote }},
+    "dateConfig": {{ toJson .Values.dateConfig | quote }},
+    "datasetThemes": {{ toJson .Values.datasetThemes | quote }},
+    "noManualThemes": {{ .Values.noManualThemes }},
+    "noManualKeywords": {{ .Values.noManualKeywords }},
+    "keywordsBlackList": {{ toJson .Values.keywordsBlackList | quote }},
     {{- if .Values.mandatoryFields }}
     "mandatoryFields": {{ toJson .Values.mandatoryFields | quote }}
     {{- end }}

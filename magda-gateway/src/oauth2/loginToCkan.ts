@@ -5,7 +5,7 @@ import { Either } from "tsmonad";
 
 const cheerio = require("cheerio");
 const gravatar = require("gravatar");
-import * as passport from "passport";
+import passport from "passport";
 
 namespace loginToCkan {
     export type Failure = string;
@@ -17,7 +17,7 @@ function loginToCkan(
     password: string,
     ckanUrl: string
 ): Promise<Either<loginToCkan.Failure, loginToCkan.Success>> {
-    return fetch(ckanUrl + "/data/login_generic?came_from=/user/logged_in", {
+    return fetch(ckanUrl + "/login_generic", {
         method: "POST",
         redirect: "manual",
         headers: {

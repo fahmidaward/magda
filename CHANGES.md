@@ -1,3 +1,37 @@
+# CHANGELOG
+
+## 0.0.57
+
+General:
+
+-   CSV Connector can now process ampersand character properly
+-   Fixed broken link minion causes json schema validation error
+-   Upgraded typescript to 3.7.2 & Use [Project References](https://www.typescriptlang.org/docs/handbook/project-references.html) to organize typescript project
+-   Upgraded prettier to 1.19.1 to [support typescript 3.7 better](https://prettier.io/blog/2019/11/09/1.19.0.html)
+
+UI:
+
+-   Fixed the issue of modifying date string in text input using backspaces to an empty string will cause text input to reset text input
+-   Added pre-specified options for themes on Add dataset page
+-   User can't input a future date to date of last modification on add dataset page
+-   Allow to config whether keywords / themes input can accept manual inputs (or only pre-defined phrases)
+-   Allow a blacklist of strings to be specified for automatic keyword generation
+
+Storage:
+
+-   Add an API for storing and streaming content
+-   Add a DELETE endpoint
+-   Improves error handling (returns 404 from GET if the file doesn't exist)
+-   Add apidocs
+
+Gateway:
+
+-   Add /data to ckan URL, remove the `came_from` param
+
+Others:
+
+-   Use a "Year" column from a CSV file to extract a temporal extent
+
 ## 0.0.56
 
 General:
@@ -149,6 +183,10 @@ UI:
 -   Fixed: if featureFlags are not set, edit buttons are always shown on dataset page
 -   Add specific color to recent search item text
 -   Added an opt-in for chart/map/table previews if files are large.
+-   Improve keywords generation logic for Spreadsheet
+-   Mention that choosing state is optional
+-   Make spatial input default to Australia
+-   Render selected time intervals above the date picker so that nothing gets hidden
 
 Gateway:
 
