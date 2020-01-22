@@ -1,0 +1,72 @@
+package au.csiro.data61.magda.registry
+
+import akka.event.LoggingAdapter
+import akka.http.scaladsl.model.StatusCodes
+import au.csiro.data61.magda.model.Registry._
+import au.csiro.data61.magda.model.TenantId._
+import gnieh.diffson._
+import gnieh.diffson.sprayJson._
+import scalikejdbc.DBSession
+import spray.json._
+
+import scala.util.Success
+
+class RecordsServiceAuthSpec extends ApiSpec {
+  describe("GET") {
+    it("allows access to records with no policy") { param =>
+      val recordId = "foo"
+      val record = Record(recordId, "foo", Map())
+
+      param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
+        TENANT_1
+      ) ~> param.api(Full).routes ~> check {
+        status shouldEqual StatusCodes.OK
+      }
+
+      Get(s"/v0/records/foo") ~> addTenantIdHeader(
+        TENANT_1
+      ) ~> param.api(Full).routes ~> check {
+        status shouldEqual StatusCodes.OK
+        val resRecord = responseAs[Record]
+
+        resRecord.id shouldBe "foo"
+        resRecord.authnReadPolicyId shouldBe None
+      }
+    }
+
+    it("allows access to records with a simple policy") { param =>
+      val aspectDefinition = AspectDefinition("auth-facet", "auth-facet", None)
+      param.asAdmin(Post("/v0/aspects", aspectDefinition)) ~> addTenantIdHeader(
+        TENANT_1
+      ) ~> param.api(Full).routes ~> check {
+        status shouldEqual StatusCodes.OK
+      }
+
+      val recordId = "foo"
+      val record =
+        Record(
+          recordId,
+          "foo",
+          Map("auth-facet" -> JsObject(Map("allow" -> JsBoolean(true)))),
+          authnReadPolicyId = Some("policy")
+        )
+
+      param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
+        TENANT_1
+      ) ~> param.api(Full).routes ~> check {
+        println(responseAs[String])
+        status shouldEqual StatusCodes.OK
+      }
+
+      Get(s"/v0/records/foo") ~> addTenantIdHeader(
+        TENANT_1
+      ) ~> param.api(Full).routes ~> check {
+        status shouldEqual StatusCodes.OK
+        val resRecord = responseAs[Record]
+
+        resRecord.id shouldBe "foo"
+        resRecord.authnReadPolicyId shouldBe Some("policy")
+      }
+    }
+  }
+}

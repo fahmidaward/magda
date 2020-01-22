@@ -957,7 +957,7 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
           .apply()
       }
       _ <- Try {
-        sql"""insert into Records (recordId, tenantId, name, lastUpdate, sourcetag) values (${record.id}, ${tenantId.tenantId}, ${record.name}, $eventId, ${record.sourceTag})""".update
+        sql"""insert into Records (recordId, tenantId, name, lastUpdate, sourcetag, authnreadpolicyid) values (${record.id}, ${tenantId.tenantId}, ${record.name}, $eventId, ${record.sourceTag}, ${record.authnReadPolicyId})""".update
           .apply()
       } match {
         case Failure(e: SQLException)
@@ -1241,6 +1241,7 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
       sql"""select Records.sequence as sequence,
                    Records.recordId as recordId,
                    Records.name as recordName,
+                   Records.authnReadPolicyid as authnReadPolicyId,
                    (select array_agg(aspectId) from RecordAspects where recordId = Records.recordId and ${SQLUtil
         .tenantIdToWhereClause(tenantId)}) as aspects,
                    Records.tenantId as tenantId
@@ -1332,7 +1333,8 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
               select Records.sequence as sequence,
                      Records.recordId as recordId,
                      Records.name as recordName,
-                     Records.tenantId as tenantId
+                     Records.tenantId as tenantId,
+                     Records.authnReadPolicyId as authnReadPolicyId
                      ${if (aspectSelectors.nonEmpty) sqls", $aspectSelectors"
       else SQLSyntax.empty},
                      Records.sourcetag as sourceTag
@@ -1454,7 +1456,8 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
         }
         .toMap,
       rs.stringOpt("sourceTag"),
-      rs.bigIntOpt("tenantId").map(BigInt.apply)
+      rs.bigIntOpt("tenantId").map(BigInt.apply),
+      rs.stringOpt("authnReadPolicyId")
     )
   }
 
