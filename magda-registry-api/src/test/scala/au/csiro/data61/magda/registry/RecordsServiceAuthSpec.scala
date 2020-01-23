@@ -34,39 +34,37 @@ class RecordsServiceAuthSpec extends ApiSpec {
       }
     }
 
-    it("allows access to records with a simple policy") { param =>
-      val aspectDefinition = AspectDefinition("auth-facet", "auth-facet", None)
-      param.asAdmin(Post("/v0/aspects", aspectDefinition)) ~> addTenantIdHeader(
-        TENANT_1
-      ) ~> param.api(Full).routes ~> check {
-        status shouldEqual StatusCodes.OK
-      }
+    it("if OPA doesn't respond, it should respond as if acecss was denied") {
+      param =>
+        val aspectDefinition =
+          AspectDefinition("auth-facet", "auth-facet", None)
+        param.asAdmin(Post("/v0/aspects", aspectDefinition)) ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          status shouldEqual StatusCodes.OK
+        }
 
-      val recordId = "foo"
-      val record =
-        Record(
-          recordId,
-          "foo",
-          Map("auth-facet" -> JsObject(Map("allow" -> JsBoolean(true)))),
-          authnReadPolicyId = Some("policy")
-        )
+        val recordId = "foo"
+        val record =
+          Record(
+            recordId,
+            "foo",
+            Map("auth-facet" -> JsObject(Map("allow" -> JsBoolean(true)))),
+            authnReadPolicyId = Some("policy")
+          )
 
-      param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
-        TENANT_1
-      ) ~> param.api(Full).routes ~> check {
-        println(responseAs[String])
-        status shouldEqual StatusCodes.OK
-      }
+        param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          println(responseAs[String])
+          status shouldEqual StatusCodes.OK
+        }
 
-      Get(s"/v0/records/foo") ~> addTenantIdHeader(
-        TENANT_1
-      ) ~> param.api(Full).routes ~> check {
-        status shouldEqual StatusCodes.OK
-        val resRecord = responseAs[Record]
-
-        resRecord.id shouldBe "foo"
-        resRecord.authnReadPolicyId shouldBe Some("policy")
-      }
+        Get(s"/v0/records/foo") ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          status shouldEqual StatusCodes.NotFound
+        }
     }
   }
 }
