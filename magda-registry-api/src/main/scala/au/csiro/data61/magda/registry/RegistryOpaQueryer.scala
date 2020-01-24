@@ -5,10 +5,14 @@ import akka.stream.Materializer
 import au.csiro.data61.magda.opa.OpaQueryer
 import au.csiro.data61.magda.opa.OpaTypes._
 import com.typesafe.config.Config
+import scalikejdbc.DB
+import scala.util.{Failure, Success, Try}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RegistryOpaQueryer()(
+class RegistryOpaQueryer(
+    recordPersistence: RecordPersistence = DefaultRecordPersistence
+)(
     implicit config: Config,
     system: ActorSystem,
     ec: ExecutionContext,
@@ -20,26 +24,33 @@ class RegistryOpaQueryer()(
       "authorization.skipOpaQuery"
     )
 
-  def queryForRecord(
+  def queryForRecords(
       jwt: Option[String],
-      operationType: AuthOperations.OperationType
-  ): Future[List[List[OpaQuery]]] = {
+      operationType: AuthOperations.OperationType,
+      recordId: Option[String] = None
+  ): Future[List[(String, List[List[OpaQuery]])]] = {
 
     if (skipOpaQuery) {
-      Future.successful(List(List(OpaQuerySkipAccessControl)))
+      Future.successful(List())
     } else {
-      val theRecordPolicyId =
-        if (config.hasPath("opa.recordPolicyId")) {
-          config.getString("opa.recordPolicyId")
-        } else {
-          throw new Exception(
-            "Error: Missing opa.recordPolicyId in the config."
-          )
-        }
+      val policyIds = DB readOnly { session =>
+        recordPersistence.getPolicyIds(session, operationType, recordId)
+      } match {
+        case Success(Nil) =>
+          if (config.hasPath("opa.recordPolicyId")) {
+            List(config.getString("opa.recordPolicyId"))
+          } else {
+            throw new Exception(
+              "Error: Missing opa.recordPolicyId in the config."
+            )
+          }
+        case Success(policyIds: List[String]) => policyIds
+        case Failure(e: Throwable)            => throw e
+      }
 
       super.queryRecord(
         jwt,
-        policyId = theRecordPolicyId + "." + operationType.id
+        policyIds = policyIds.map(_ + "." + operationType.id)
       )
     }
   }

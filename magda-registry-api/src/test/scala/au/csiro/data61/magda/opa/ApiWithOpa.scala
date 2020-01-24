@@ -422,7 +422,7 @@ abstract class ApiWithOpa
     )
 
   GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
-    enabled = false,
+    enabled = true,
     singleLineMode = true,
     logLevel = 'info
   )

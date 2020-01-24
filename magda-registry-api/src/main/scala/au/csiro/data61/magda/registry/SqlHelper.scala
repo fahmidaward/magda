@@ -26,19 +26,28 @@ object SqlHelper {
     * @return a single SQL clause
     */
   def getOpaConditions(
-      opaQueries: Seq[List[OpaQuery]],
+      opaQueries: List[(String, List[List[OpaQuery]])],
       operationType: AuthOperations.OperationType,
-      recordId: String = ""
+      recordId: Option[String] = None
   ): SQLSyntax = {
 
     val conditions: SQLSyntax = if (opaQueries.nonEmpty) {
-      SQLSyntax.joinWithOr(
-        opaQueries.map(outerRule => {
-          SQLSyntax.joinWithAnd(
-            opaQueriesToWhereClauseParts(outerRule): _*
+      SQLSyntax.joinWithOr(opaQueries.map {
+        case (policyId, policyQueries) =>
+          SQLSyntax.joinWithOr(
+            policyQueries.map { outerRule =>
+              val queries = opaQueriesToWhereClauseParts(
+                outerRule
+              )
+
+              val policyQuery = sqls"Records.authnReadPolicyId = $policyId"
+
+              SQLSyntax.joinWithAnd(
+                (policyQuery +: queries): _*
+              )
+            }: _*
           )
-        }): _*
-      )
+      }: _*)
     } else {
       SQL_TRUE
     }
@@ -49,16 +58,17 @@ object SqlHelper {
       val theRecordId =
         if (recordId.nonEmpty) sqls"$recordId" else sqls"Records.recordId"
 
-      val accessControlAspectId = getAccessAspectId(opaQueries.head.head)
+      val recordClause = recordId match {
+        case Some(recordId) => sqls"Records.recordId = $recordId"
+        case None           => SQL_TRUE
+      }
 
       sqls"""
-          (EXISTS (
-            SELECT 1 FROM records_without_access_control
-            WHERE (recordid, tenantid)=($theRecordId, records.tenantId)) or
-          exists (
-            select 1 from recordaspects
-            where (RecordAspects.recordId, RecordAspects.aspectId, RecordAspects.tenantId)=($theRecordId, $accessControlAspectId, Records.tenantId) and
-            ($conditions)
+        EXISTS (
+            SELECT 1 FROM recordaspects
+            WHERE
+              ${recordClause} AND
+              ($conditions)
           ))
         """
     }

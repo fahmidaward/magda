@@ -8,10 +8,25 @@ import gnieh.diffson._
 import gnieh.diffson.sprayJson._
 import scalikejdbc.DBSession
 import spray.json._
+import scalikejdbc.{GlobalSettings, LoggingSQLAndTimeSettings}
 
 import scala.util.Success
 
 class RecordsServiceAuthSpec extends ApiSpec {
+println("HELLO")
+  GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
+    enabled = true,
+    singleLineMode = true,
+    logLevel = 'info
+  )
+
+  override def testConfigSource =
+    s"""
+       |db.default.url = "${databaseUrl}?currentSchema=test"
+       |authorization.skip = false
+       |authorization.skipOpaQuery = false
+    """.stripMargin
+
   describe("GET") {
     it("allows access to records with no policy") { param =>
       val recordId = "foo"

@@ -577,6 +577,7 @@ class RecordsServiceRO(
               materializer,
               ec
             ) { opaQueries =>
+              println(opaQueries)
               assert(opaQueries.nonEmpty)
               DB readOnly { session =>
                 recordPersistence.getByIdWithAspects(

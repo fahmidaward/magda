@@ -38,9 +38,6 @@ class WebHookProcessor(
 
   val recordPersistence: DefaultRecordPersistence.type =
     DefaultRecordPersistence
-  // No access control will apply to webhooks.
-  // In the current system, all web hooks are treated as system level users.
-  val opaQuerySkipAccessControl = List(OpaQuerySkipAccessControl)
 
   private def getTenantRecordIdsMap(
       events: List[RegistryEvent]
@@ -104,7 +101,7 @@ class WebHookProcessor(
                   session,
                   SpecifiedTenantId(tenantId),
                   recordIds,
-                  List(this.opaQuerySkipAccessControl),
+                  List(),
                   webHook.config.aspects.getOrElse(Nil),
                   webHook.config.optionalAspects.getOrElse(Nil),
                   webHook.config.dereference
@@ -130,7 +127,7 @@ class WebHookProcessor(
                   session,
                   SpecifiedTenantId(tenantId),
                   recordIds,
-                  List(this.opaQuerySkipAccessControl),
+                  List(),
                   recordIdsExcluded,
                   webHook.config.aspects.getOrElse(Nil),
                   webHook.config.optionalAspects.getOrElse(Nil),

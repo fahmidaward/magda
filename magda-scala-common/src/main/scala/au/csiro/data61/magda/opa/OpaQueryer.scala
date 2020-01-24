@@ -124,9 +124,14 @@ class OpaQueryer()(
 
   def queryRecord(
       jwtToken: Option[String],
-      policyId: String
-  ): Future[List[List[OpaQuery]]] = {
-    queryPolicy(jwtToken, policyId)
+      policyIds: List[String]
+  ): Future[List[(String, List[List[OpaTypes.OpaQuery]])]] = {
+    Future.sequence(
+      policyIds.map(
+        policyId =>
+          queryPolicy(jwtToken, policyId).map(result => (policyId, result))
+      )
+    )
   }
 
   def queryPolicy(
