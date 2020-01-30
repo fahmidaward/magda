@@ -2,9 +2,12 @@ import express from "express";
 import { OutgoingHttpHeaders } from "http";
 import ObjectStoreClient from "./ObjectStoreClient";
 import bodyParser from "body-parser";
+import { mustBeAdmin } from "magda-typescript-common/src/authorization-api/authMiddleware";
 
 export interface ApiRouterOptions {
     objectStoreClient: ObjectStoreClient;
+    authApiUrl: string;
+    jwtSecret: string;
 }
 
 export default function createApiRouter(options: ApiRouterOptions) {
@@ -25,6 +28,57 @@ export default function createApiRouter(options: ApiRouterOptions) {
     router.get("/status/ready", function(_req, res) {
         return res.status(200).send("OK");
     });
+
+    /**
+     * @apiGroup Storage
+     *
+     * @api {PUT} /v0/{bucketid} Request to create a new bucket
+     *
+     * @apiDescription Creates a new bucket with a specified name. Restricted to admins only.
+     *
+     * @apiParam (Request body) {string} bucketid The name of the bucket to be created
+     *
+     * @apiSuccessExample {json} 201
+     *    {
+     *        "message":"Bucket my-bucket created successfully in unspecified-region 🎉"
+     *    }
+     *
+     * @apiSuccessExample {json} 201
+     *    {
+     *        "message": "Bucket my-bucket already exists 👍"
+     *    }
+     * @apiErrorExample {json} 500
+     *    {
+     *        "message": "Bucket creation failed. This has been logged and we are looking into this."
+     *    }
+     */
+    router.put(
+        "/:bucketid",
+        mustBeAdmin(options.authApiUrl, options.jwtSecret),
+        async function(req, res) {
+            const bucketId = req.params.bucketid;
+            if (!bucketId) {
+                return res
+                    .status(400)
+                    .send("Please specify a bucket name in the request URL.");
+            }
+
+            const encodedBucketname = encodeURIComponent(bucketId);
+            try {
+                const createBucketRes = await options.objectStoreClient.createBucket(
+                    encodedBucketname
+                );
+                return res.status(201).send({
+                    message: createBucketRes.message
+                });
+            } catch (err) {
+                return res.status(500).send({
+                    message:
+                        "Bucket creation failed. This has been logged and we are looking into this."
+                });
+            }
+        }
+    );
 
     /**
      * @apiDefine Storage Storage API
@@ -95,7 +149,7 @@ export default function createApiRouter(options: ApiRouterOptions) {
      *
      * @api {put} /v0/{bucket}/{fieldid} Request to upload an object to {bucket} with name {fieldid}
      *
-     * @apiDescription Uploads an object
+     * @apiDescription Uploads an object. Restricted to admins only.
      *
      * @apiParam (Request body) {string} bucket The name of the bucket to which to upload to
      * @apiParam (Request body) {string} fieldid The name of the object being uploaded
@@ -103,7 +157,7 @@ export default function createApiRouter(options: ApiRouterOptions) {
      * @apiSuccessExample {json} 200
      *    {
      *        "message":"File uploaded successfully",
-     *        "etag":"edd88378a7900bf663a5fa386396b585-1"
+     *        "etag":"edd88378a7900bf663a5fa386386b585-1"
      *    }
      *
      * @apiErrorExample {json} 500
@@ -111,34 +165,45 @@ export default function createApiRouter(options: ApiRouterOptions) {
      *        "message":"Encountered error while uploading file. This has been logged and we are looking into this."
      *    }
      */
-    router.put("/:bucket/:fileid", async function(req, res) {
-        const fileId = req.params.fileid;
-        const bucket = req.params.bucket;
-        const encodedRootPath = encodeURIComponent(fileId);
-        const encodeBucketname = encodeURIComponent(bucket);
-        const content = req.body;
-        const metaData = {
-            "Content-Type": req.headers["content-type"],
-            "Content-Length": req.headers["content-length"]
-        };
-        return options.objectStoreClient
-            .putFile(encodeBucketname, encodedRootPath, content, metaData)
-            .then(etag => {
-                return res.status(200).send({
-                    message: "File uploaded successfully",
-                    etag: etag
+    router.put(
+        "/:bucket/:fileid",
+        mustBeAdmin(options.authApiUrl, options.jwtSecret),
+        async function(req, res) {
+            const fileId = req.params.fileid;
+            const bucket = req.params.bucket;
+            const encodedRootPath = encodeURIComponent(fileId);
+            const encodeBucketname = encodeURIComponent(bucket);
+            const content = req.body;
+            const contentType = req.headers["content-type"];
+            const contentLength = req.headers["content-length"];
+
+            if (!contentLength) {
+                return res.status(400).send("No Content.");
+            }
+
+            const metaData = {
+                "Content-Type": contentType,
+                "Content-Length": contentLength
+            };
+            return options.objectStoreClient
+                .putFile(encodeBucketname, encodedRootPath, content, metaData)
+                .then(etag => {
+                    return res.status(200).send({
+                        message: "File uploaded successfully",
+                        etag: etag
+                    });
+                })
+                .catch((err: Error) => {
+                    console.error(err);
+                    // Sending 500 for everything for the moment
+                    return res.status(500).send({
+                        message:
+                            "Encountered error while uploading file. " +
+                            "This has been logged and we are looking into this."
+                    });
                 });
-            })
-            .catch((err: Error) => {
-                console.error(err);
-                // Sending 500 for everything for the moment
-                return res.status(500).send({
-                    message:
-                        "Encountered error while uploading file. " +
-                        "This has been logged and we are looking into this."
-                });
-            });
-    });
+        }
+    );
 
     /**
      * @apiGroup Storage
