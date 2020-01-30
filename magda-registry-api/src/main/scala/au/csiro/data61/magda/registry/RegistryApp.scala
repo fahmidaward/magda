@@ -95,7 +95,7 @@ object RegistryApp extends App {
 
   val api = new Api(
     webHookActorOpt,
-    new AuthApiClient(),
+    new RegistryAuthApiClient(),
     config,
     system,
     executor,

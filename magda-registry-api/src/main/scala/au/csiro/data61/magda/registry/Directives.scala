@@ -13,19 +13,17 @@ import scala.concurrent.{ExecutionContext, Future}
 object Directives {
 
   def withRecordOpaQuery(
-      operationType: AuthOperations.OperationType
+      operationType: AuthOperations.OperationType,
+      authApiClient: RegistryAuthApiClient
   )(
       implicit config: Config,
       system: ActorSystem,
       materializer: Materializer,
       ec: ExecutionContext
   ): Directive1[List[(String, List[List[OpaQuery]])]] = {
-    val opaQueryer =
-      new RegistryOpaQueryer()(config, system, system.dispatcher, materializer)
-
     AuthDirectives.getJwt().flatMap { jwt =>
       val recordFuture =
-        opaQueryer.queryForRecords(jwt, operationType)
+        authApiClient.queryForRecords(jwt, operationType)
 
       onSuccess(recordFuture).flatMap { queryResults =>
         provide(queryResults)

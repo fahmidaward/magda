@@ -52,7 +52,6 @@ object AuthDirectives {
             try {
               val claims: Jws[Claims] =
                 Authentication.parser(system.log).parseClaimsJws(header.value())
-              println(claims)
               val userId = claims.getBody().get("userId", classOf[String])
 
               provide(

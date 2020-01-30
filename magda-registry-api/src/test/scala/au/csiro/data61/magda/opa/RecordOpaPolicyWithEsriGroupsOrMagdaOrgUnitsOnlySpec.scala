@@ -33,9 +33,6 @@ abstract class RecordOpaPolicyWithEsriGroupsOrMagdaOrgUnitsOnlySpec
                 .routes ~> check {
                 val theResponse = responseAs[Option[JsObject]]
 
-                println(s"user $userId trying to access $recordId, should be ${expectedRecordIndexes
-                  .contains(recordIndex)}, is $status")
-
                 if (expectedRecordIndexes.contains(recordIndex)) {
                   status shouldBe StatusCodes.OK
                   foundRecordsCounter = foundRecordsCounter + 1

@@ -19,6 +19,7 @@ import scalikejdbc.DB
   produces = "application/json"
 )
 class RecordAspectsServiceRO(
+    authApiClient: RegistryAuthApiClient,
     system: ActorSystem,
     materializer: Materializer,
     config: Config
@@ -99,7 +100,7 @@ class RecordAspectsServiceRO(
       (recordId: String, aspectId: String) =>
         requiresTenantId { tenantId =>
           {
-            withRecordOpaQuery(AuthOperations.read)(
+            withRecordOpaQuery(AuthOperations.read, authApiClient)(
               config,
               system,
               materializer,

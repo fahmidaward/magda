@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext
 @Path("/records")
 @io.swagger.annotations.Api(value = "records", produces = "application/json")
 class RecordsServiceRO(
+    authApiClient: RegistryAuthApiClient,
     config: Config,
     system: ActorSystem,
     materializer: Materializer,
@@ -162,7 +163,7 @@ class RecordsServiceRO(
           ) =>
             val parsedAspectQueries = aspectQueries.map(AspectQuery.parse)
 
-            withRecordOpaQuery(AuthOperations.read)(
+            withRecordOpaQuery(AuthOperations.read, authApiClient)(
               config,
               system,
               materializer,
@@ -268,7 +269,7 @@ class RecordsServiceRO(
       requiresTenantId { tenantId =>
         parameters('pageToken.?, 'start.as[Int].?, 'limit.as[Int].?) {
           (pageToken, start, limit) =>
-            withRecordOpaQuery(AuthOperations.read)(
+            withRecordOpaQuery(AuthOperations.read, authApiClient)(
               config,
               system,
               materializer,
@@ -360,7 +361,7 @@ class RecordsServiceRO(
         parameters('aspect.*, 'aspectQuery.*) { (aspects, aspectQueries) =>
           val parsedAspectQueries = aspectQueries.map(AspectQuery.parse)
 
-          withRecordOpaQuery(AuthOperations.read)(
+          withRecordOpaQuery(AuthOperations.read, authApiClient)(
             config,
             system,
             materializer,
@@ -452,7 +453,7 @@ class RecordsServiceRO(
         requiresTenantId { tenantId =>
           import scalikejdbc._
           parameters('aspect.*, 'limit.as[Int].?) { (aspect, limit) =>
-            withRecordOpaQuery(AuthOperations.read)(
+            withRecordOpaQuery(AuthOperations.read, authApiClient)(
               this.config,
               system,
               materializer,
@@ -571,7 +572,7 @@ class RecordsServiceRO(
       requiresTenantId { tenantId =>
         parameters('aspect.*, 'optionalAspect.*, 'dereference.as[Boolean].?) {
           (aspects, optionalAspects, dereference) =>
-            withRecordOpaQuery(AuthOperations.read)(
+            withRecordOpaQuery(AuthOperations.read, authApiClient)(
               config,
               system,
               materializer,
@@ -669,7 +670,7 @@ class RecordsServiceRO(
   def getByIdSummary: Route = get {
     path("summary" / Segment) { id =>
       requiresTenantId { tenantId =>
-        withRecordOpaQuery(AuthOperations.read)(
+        withRecordOpaQuery(AuthOperations.read, authApiClient)(
           config,
           system,
           materializer,
@@ -699,7 +700,7 @@ class RecordsServiceRO(
       getPageTokens ~
       getById ~
       getByIdSummary ~
-      new RecordAspectsServiceRO(system, materializer, config).route ~
+      new RecordAspectsServiceRO(authApiClient, system, materializer, config).route ~
       new RecordHistoryService(system, materializer).route
 
 }

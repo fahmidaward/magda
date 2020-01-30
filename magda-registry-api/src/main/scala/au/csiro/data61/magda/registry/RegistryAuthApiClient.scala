@@ -2,23 +2,43 @@ package au.csiro.data61.magda.registry
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import au.csiro.data61.magda.opa.OpaQueryer
 import au.csiro.data61.magda.opa.OpaTypes._
 import com.typesafe.config.Config
 import scalikejdbc.DB
 import scala.util.{Failure, Success, Try}
 
 import scala.concurrent.{ExecutionContext, Future}
+import au.csiro.data61.magda.client.AuthApiClient
+import au.csiro.data61.magda.client.HttpFetcher
+import java.net.URL
 
-class RegistryOpaQueryer(
-    recordPersistence: RecordPersistence = DefaultRecordPersistence
+class RegistryAuthApiClient(
+    httpFetcher: HttpFetcher,
+    recordPersistence: RecordPersistence
 )(
     implicit config: Config,
     system: ActorSystem,
     ec: ExecutionContext,
     materializer: Materializer
-) extends OpaQueryer {
-
+) extends AuthApiClient(httpFetcher) {
+  def this()(
+      implicit config: Config,
+      system: ActorSystem,
+      executor: ExecutionContext,
+      materializer: Materializer
+  ) = {
+    this(
+      HttpFetcher(
+        new URL(config.getString("authApi.baseUrl"))
+      ),
+      DefaultRecordPersistence
+    )(
+      config,
+      system,
+      executor,
+      materializer
+    )
+  }
   private def skipOpaQuery(implicit config: Config) =
     config.hasPath("authorization.skipOpaQuery") && config.getBoolean(
       "authorization.skipOpaQuery"

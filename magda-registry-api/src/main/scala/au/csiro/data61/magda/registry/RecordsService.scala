@@ -31,11 +31,11 @@ import scala.util.{Failure, Success}
 class RecordsService(
     config: Config,
     webHookActor: ActorRef,
-    authClient: AuthApiClient,
+    authClient: RegistryAuthApiClient,
     system: ActorSystem,
     materializer: Materializer,
     recordPersistence: RecordPersistence = DefaultRecordPersistence
-) extends RecordsServiceRO(config, system, materializer, recordPersistence) {
+) extends RecordsServiceRO(authClient, config, system, materializer, recordPersistence) {
   val logger = Logging(system, getClass)
   implicit val ec: ExecutionContext = system.dispatcher
 

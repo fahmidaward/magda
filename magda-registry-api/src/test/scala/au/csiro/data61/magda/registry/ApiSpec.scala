@@ -63,7 +63,7 @@ abstract class ApiSpec
       asAdmin: HttpRequest => HttpRequest,
       asNonAdmin: HttpRequest => HttpRequest,
       fetcher: HttpFetcher,
-      authClient: AuthApiClient
+      authClient: RegistryAuthApiClient
   )
 
   val databaseUrl = Option(System.getenv("POSTGRES_URL"))
@@ -120,7 +120,12 @@ abstract class ApiSpec
     //    webHookActorProbe.expectMsg(1 millis, WebHookActor.Process(true))
 
     val authClient =
-      new AuthApiClient(httpFetcher)(testConfig, system, executor, materializer)
+      new RegistryAuthApiClient(httpFetcher, DefaultRecordPersistence)(
+        testConfig,
+        system,
+        executor,
+        materializer
+      )
 
     GlobalSettings.loggingSQLAndTime = new LoggingSQLAndTimeSettings(
       enabled = true,

@@ -28,11 +28,11 @@ import scala.util.{Failure, Success}
 )
 class RecordAspectsService(
     webHookActor: ActorRef,
-    authClient: AuthApiClient,
+    authClient: RegistryAuthApiClient,
     system: ActorSystem,
     materializer: Materializer,
     config: Config
-) extends RecordAspectsServiceRO(system, materializer, config) {
+) extends RecordAspectsServiceRO(authClient, system, materializer, config) {
   private val recordPersistence = DefaultRecordPersistence
 
   /**

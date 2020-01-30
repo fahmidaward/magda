@@ -37,10 +37,6 @@ object Authentication {
         }
     }
 
-  // def key(implicit logger: LoggingAdapter): Key =
-  // // Keys.
-  //   Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8))
-
   def parser(implicit logger: LoggingAdapter) =
     Jwts
       .parser()

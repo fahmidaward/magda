@@ -70,7 +70,7 @@ abstract class ApiWithOpa
       WebHookActor.props("http://localhost:6101/v0/")(testConfig)
     )
     val authClient =
-      new AuthApiClient()(testConfig, system, executor, materializer)
+      new RegistryAuthApiClient()(testConfig, system, executor, materializer)
     val api = (role: Role) =>
       new Api(
         if (role == Full) Some(actor) else None,
