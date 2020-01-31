@@ -13,7 +13,6 @@ import scalikejdbc.{GlobalSettings, LoggingSQLAndTimeSettings}
 import scala.util.Success
 
 class RecordsServiceAuthSpec extends ApiSpec {
-println("HELLO")
   GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
     enabled = true,
     singleLineMode = true,
