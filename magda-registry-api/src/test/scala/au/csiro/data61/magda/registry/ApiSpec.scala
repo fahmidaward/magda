@@ -62,7 +62,7 @@ abstract class ApiSpec
       webHookActor: ActorRef,
       asAdmin: HttpRequest => HttpRequest,
       asNonAdmin: HttpRequest => HttpRequest,
-      fetcher: HttpFetcher,
+      authFetcher: HttpFetcher,
       authClient: RegistryAuthApiClient
   )
 
@@ -115,12 +115,12 @@ abstract class ApiSpec
     """.stripMargin
 
   override def withFixture(test: OneArgTest) = {
-    val httpFetcher = mock[HttpFetcher]
+    val authHttpFetcher = mock[HttpFetcher]
 
     //    webHookActorProbe.expectMsg(1 millis, WebHookActor.Process(true))
 
     val authClient =
-      new RegistryAuthApiClient(httpFetcher, DefaultRecordPersistence)(
+      new RegistryAuthApiClient(authHttpFetcher, DefaultRecordPersistence)(
         testConfig,
         system,
         executor,
@@ -165,19 +165,19 @@ abstract class ApiSpec
       )
 
     def asNonAdmin(req: HttpRequest): HttpRequest = {
-      expectAdminCheck(httpFetcher, false)
+      expectAdminCheck(authHttpFetcher, false)
       asUser(req)
     }
 
     def asAdmin(req: HttpRequest): HttpRequest = {
-      expectAdminCheck(httpFetcher, true)
+      expectAdminCheck(authHttpFetcher, true)
       asUser(req)
     }
 
     try {
       super.withFixture(
         test.toNoArgTest(
-          FixtureParam(api, actor, asAdmin, asNonAdmin, httpFetcher, authClient)
+          FixtureParam(api, actor, asAdmin, asNonAdmin, authHttpFetcher, authClient)
         )
       )
     } finally {

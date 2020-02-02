@@ -13,14 +13,14 @@ import au.csiro.data61.magda.client.HttpFetcher
 import java.net.URL
 
 class RegistryAuthApiClient(
-    httpFetcher: HttpFetcher,
+    authHttpFetcher: HttpFetcher,
     recordPersistence: RecordPersistence
 )(
     implicit config: Config,
     system: ActorSystem,
     ec: ExecutionContext,
     materializer: Materializer
-) extends AuthApiClient(httpFetcher) {
+) extends AuthApiClient(authHttpFetcher) {
   def this()(
       implicit config: Config,
       system: ActorSystem,
@@ -64,8 +64,9 @@ class RegistryAuthApiClient(
               "Error: Missing opa.recordPolicyId in the config."
             )
           }
-        case Success(policyIds: List[String]) => policyIds
-        case Failure(e: Throwable)            => throw e
+        case Success(policyIds: List[String]) =>
+          policyIds
+        case Failure(e: Throwable) => throw e
       }
 
       super.queryRecord(

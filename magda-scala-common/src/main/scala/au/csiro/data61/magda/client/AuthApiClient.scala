@@ -20,7 +20,7 @@ import spray.json._
 import akka.util.ByteString
 import scala.concurrent.duration._
 
-class AuthApiClient(httpFetcher: HttpFetcher)(
+class AuthApiClient(authHttpFetcher: HttpFetcher)(
     implicit val config: Config,
     implicit val system: ActorSystem,
     implicit val executor: ExecutionContext,
@@ -45,7 +45,7 @@ class AuthApiClient(httpFetcher: HttpFetcher)(
   }
 
   def getUserPublic(userId: String): Future[User] = {
-    val responseFuture = httpFetcher.get(s"/v0/public/users/$userId")
+    val responseFuture = authHttpFetcher.get(s"/v0/public/users/$userId")
 
     responseFuture.flatMap(
       response =>
@@ -98,7 +98,7 @@ class AuthApiClient(httpFetcher: HttpFetcher)(
     //     parseOpaResponse(json)
     //   })
 
-    httpFetcher
+    authHttpFetcher
       .post(
         s"/opa/compile",
         HttpEntity(ContentTypes.`application/json`, requestData),
