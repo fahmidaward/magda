@@ -29,12 +29,14 @@ object SqlHelper {
       opaQueries: List[(String, List[List[OpaQuery]])],
       operationType: AuthOperations.OperationType,
       recordId: Option[String] = None
-  ): SQLSyntax = {
-
-    val conditions: SQLSyntax = if (opaQueries.nonEmpty) {
-      SQLSyntax.joinWithOr(opaQueries.map {
+  ): SQLSyntax = opaQueries match {
+    case Nil => SQL_TRUE
+    case _ =>
+      val conditions = opaQueries.flatMap {
+        case (policyId, Nil) =>
+          None
         case (policyId, policyQueries) =>
-          SQLSyntax.joinWithOr(
+          Some(SQLSyntax.joinWithOr(
             policyQueries.map { outerRule =>
               val queries = opaQueriesToWhereClauseParts(
                 outerRule
@@ -46,15 +48,12 @@ object SqlHelper {
                 (policyQuery +: queries): _*
               )
             }: _*
-          )
-      }: _*)
-    } else {
-      SQL_TRUE
-    }
+          ))
+      }
 
-    if (conditions.equals(SQL_TRUE)) {
-      conditions
-    } else {
+      conditions match {
+        case Nil => SQL_TRUE
+        case _ => 
       val theRecordId =
         if (recordId.nonEmpty) sqls"$recordId" else sqls"Records.recordId"
 
@@ -63,15 +62,18 @@ object SqlHelper {
         case None           => SQL_TRUE
       }
 
+      
+
       sqls"""
         EXISTS (
             SELECT 1 FROM recordaspects
             WHERE
               ${recordClause} AND
-              ($conditions)
-          ))
+              (${SQLSyntax.joinWithOr(conditions: _*)})
+          )
         """
-    }
+      }
+
   }
 
   /**
@@ -120,6 +122,7 @@ object SqlHelper {
   }
 
   private val SQL_TRUE = sqls"true"
+  private val SQL_FALSE = sqls"false"
   private val SQL_EQ = SQLSyntax.createUnsafely("=")
 
   private def convertToSql(operation: OpaOp): SQLSyntax = {
@@ -159,20 +162,12 @@ object SqlHelper {
 
   private def opaQueriesToWhereClauseParts(
       opaQueries: List[OpaQuery]
-  ): List[SQLSyntax] = {
-    val theOpaQueries =
-      if (opaQueries.nonEmpty) {
-        opaQueries
-      } else {
-        List(OpaQuerySkipAccessControl)
-      }
-
-    if (theOpaQueries.contains(OpaQueryAllMatched) || theOpaQueries.contains(
-          OpaQuerySkipAccessControl
-        )) {
-      List(SQL_TRUE)
-    } else {
-      val opaAspectQueries: List[AspectQuery] = theOpaQueries.map({
+  ): List[SQLSyntax] = opaQueries match {
+    case Nil                       => List(SQL_TRUE)
+    case List(OpaQueryAllMatched)  => List(SQL_TRUE)
+    case List(OpaQueryNoneMatched) => List(SQL_FALSE)
+    case _ =>
+      val opaAspectQueries: List[AspectQuery] = opaQueries.map({
         case OpaQueryMatchValue(
             OpaRefObjectKey("object")
               :: OpaRefObjectKey("registry")
@@ -200,7 +195,5 @@ object SqlHelper {
       })
 
       aspectQueriesToSql(opaAspectQueries)
-    }
   }
-
 }

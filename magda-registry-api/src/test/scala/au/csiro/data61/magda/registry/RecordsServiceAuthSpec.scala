@@ -8,7 +8,6 @@ import gnieh.diffson._
 import gnieh.diffson.sprayJson._
 import scalikejdbc.DBSession
 import spray.json._
-import scalikejdbc.{GlobalSettings, LoggingSQLAndTimeSettings}
 import akka.http.scaladsl.marshalling.Marshal
 
 import scala.util.Success
@@ -19,120 +18,219 @@ import au.csiro.data61.magda.model.Auth.User
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.ResponseEntity
 import akka.http.scaladsl.model.ContentTypes
+import akka.http.scaladsl.marshalling.ToEntityMarshaller
 
 class RecordsServiceAuthSpec extends ApiSpec {
-  GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
-    enabled = true,
-    singleLineMode = true,
-    logLevel = 'info
-  )
-
   override def testConfigSource =
     s"""
        |db.default.url = "${databaseUrl}?currentSchema=test"
        |authorization.skip = false
        |authorization.skipOpaQuery = false
-       |opa.recordPolicyId = "this.is.a.policy"
+       |opa.recordPolicyId = "default.policy"
     """.stripMargin
 
   describe("GET") {
-    it("allows access to records with no policy") { param =>
-      val recordId = "foo"
-      val record = Record(recordId, "foo", Map())
+    describe("for a single record") {
+      describe("with a default policy") {
+        it(
+          "allows access to an aspect-less record if default policy resolves to unconditionally allow access"
+        ) { param =>
+          val recordId = "foo"
+          val record = Record(recordId, "foo", Map())
 
-      (param.authFetcher
-        .get(_: String, _: Seq[HttpHeader]))
-        .expects(
-          "/opa/compile",
-          *,
-          HttpEntity(
-            ContentTypes.`application/json`,
-            """{
-              "query": "data.this.is.a.policy.read",
-              "unknowns": ["input.object"]
-            }"""".stripMargin
-          )
-        )
-        .returning(
-          Marshal(User(true))
-            .to[ResponseEntity]
-            .map(
-              HttpResponse(
-                StatusCodes.OK,
-                Nil,
-                _
-              )
+          (param.authFetcher
+            .post(
+              _: String,
+              _: HttpEntity.Strict,
+              _: List[HttpHeader]
+            )(
+              _: ToEntityMarshaller[HttpEntity.Strict]
+            ))
+            .expects(
+              "/opa/compile",
+              HttpEntity(
+                ContentTypes.`application/json`,
+                """{
+                  |  "query": "data.default.policy.read",
+                  |  "unknowns": ["input.object"]
+                  |}""".stripMargin
+              ),
+              *,
+              *
             )
-        )
+            .returning(
+              Marshal(
+                """{
+              "result": {
+                  "queries": []
+              }
+            }""".stripMargin
+              ).to[ResponseEntity]
+                .map(
+                  HttpResponse(
+                    StatusCodes.OK,
+                    Nil,
+                    _
+                  )
+                )
+            )
 
-      // (mockedRecordPersistence
-      //   .trimRecordsBySource(
-      //     _: SpecifiedTenantId,
-      //     _: String,
-      //     _: String,
-      //     _: Option[LoggingAdapter]
-      //   )(_: DBSession))
-      //   .expects(*, *, *, *, *)
-      //   .onCall {
-      //     (
-      //         _: SpecifiedTenantId,
-      //         _: String,
-      //         _: String,
-      //         _: Option[LoggingAdapter],
-      //         _: DBSession
-      //     ) =>
-      //       Thread.sleep(600)
-      //       Success(1)
-      //   }
+          param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
+            TENANT_1
+          ) ~> param.api(Full).routes ~> check {
+            status shouldEqual StatusCodes.OK
+          }
 
-      param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
-        TENANT_1
-      ) ~> param.api(Full).routes ~> check {
-        status shouldEqual StatusCodes.OK
-      }
+          Get(s"/v0/records/foo") ~> addTenantIdHeader(
+            TENANT_1
+          ) ~> param.api(Full).routes ~> check {
+            status shouldEqual StatusCodes.OK
+            val resRecord = responseAs[Record]
 
-      Get(s"/v0/records/foo") ~> addTenantIdHeader(
-        TENANT_1
-      ) ~> param.api(Full).routes ~> check {
-        status shouldEqual StatusCodes.OK
-        val resRecord = responseAs[Record]
+            resRecord.id shouldBe "foo"
+            resRecord.authnReadPolicyId shouldBe None
+          }
+        }
 
-        resRecord.id shouldBe "foo"
-        resRecord.authnReadPolicyId shouldBe None
+        it(
+          "disallows access to an aspect-less record if default policy resolves to unconditionally disallow access"
+        ) { param =>
+          val recordId = "foo"
+          val record = Record(recordId, "foo", Map())
+
+          (param.authFetcher
+            .post(
+              _: String,
+              _: HttpEntity.Strict,
+              _: List[HttpHeader]
+            )(
+              _: ToEntityMarshaller[HttpEntity.Strict]
+            ))
+            .expects(
+              "/opa/compile",
+              HttpEntity(
+                ContentTypes.`application/json`,
+                """{
+                  |  "query": "data.default.policy.read",
+                  |  "unknowns": ["input.object"]
+                  |}""".stripMargin
+              ),
+              *,
+              *
+            )
+            .returning(
+              Marshal(
+                """{
+              "result": {}
+            }""".stripMargin
+              ).to[ResponseEntity]
+                .map(
+                  HttpResponse(
+                    StatusCodes.OK,
+                    Nil,
+                    _
+                  )
+                )
+            )
+
+          param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
+            TENANT_1
+          ) ~> param.api(Full).routes ~> check {
+            status shouldEqual StatusCodes.OK
+          }
+
+          Get(s"/v0/records/foo") ~> addTenantIdHeader(
+            TENANT_1
+          ) ~> param.api(Full).routes ~> check {
+            status shouldEqual StatusCodes.NotFound
+          }
+        }
+        //     "queries": [
+        //         [
+        //             {
+        //                 "index": 0,
+        //                 "terms": [
+        //                     {
+        //                         "type": "ref",
+        //                         "value": [
+        //                             {
+        //                                 "type": "var",
+        //                                 "value": "eq"
+        //                             }
+        //                         ]
+        //                     },
+        //                     {
+        //                         "type": "ref",
+        //                         "value": [
+        //                             {
+        //                                 "type": "var",
+        //                                 "value": "input"
+        //                             },
+        //                             {
+        //                                 "type": "string",
+        //                                 "value": "object"
+        //                             },
+        //                             {
+        //                                 "type": "string",
+        //                                 "value": "registry"
+        //                             },
+        //                             {
+        //                                 "type": "string",
+        //                                 "value": "record"
+        //                             },
+        //                             {
+        //                                 "type": "string",
+        //                                 "value": "esri-access-control"
+        //                             },
+        //                             {
+        //                                 "type": "string",
+        //                                 "value": "access"
+        //                             }
+        //                         ]
+        //                     },
+        //                     {
+        //                         "type": "string",
+        //                         "value": "public"
+        //                     }
+        //                 ]
+        //             }
+        //         ]
+        //     ]
+        // }
+
+        // it("if OPA doesn't respond, it should respond as if acecss was denied") {
+        //   param =>
+        //     val aspectDefinition =
+        //       AspectDefinition("auth-facet", "auth-facet", None)
+        //     param.asAdmin(Post("/v0/aspects", aspectDefinition)) ~> addTenantIdHeader(
+        //       TENANT_1
+        //     ) ~> param.api(Full).routes ~> check {
+        //       status shouldEqual StatusCodes.OK
+        //     }
+
+        //     val recordId = "foo"
+        //     val record =
+        //       Record(
+        //         recordId,
+        //         "foo",
+        //         Map("auth-facet" -> JsObject(Map("allow" -> JsBoolean(true)))),
+        //         authnReadPolicyId = Some("policy")
+        //       )
+
+        //     param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
+        //       TENANT_1
+        //     ) ~> param.api(Full).routes ~> check {
+        //       println(responseAs[String])
+        //       status shouldEqual StatusCodes.OK
+        //     }
+
+        //     Get(s"/v0/records/foo") ~> addTenantIdHeader(
+        //       TENANT_1
+        //     ) ~> param.api(Full).routes ~> check {
+        //       status shouldEqual StatusCodes.NotFound
+        //     }
+        // }
       }
     }
-
-    // it("if OPA doesn't respond, it should respond as if acecss was denied") {
-    //   param =>
-    //     val aspectDefinition =
-    //       AspectDefinition("auth-facet", "auth-facet", None)
-    //     param.asAdmin(Post("/v0/aspects", aspectDefinition)) ~> addTenantIdHeader(
-    //       TENANT_1
-    //     ) ~> param.api(Full).routes ~> check {
-    //       status shouldEqual StatusCodes.OK
-    //     }
-
-    //     val recordId = "foo"
-    //     val record =
-    //       Record(
-    //         recordId,
-    //         "foo",
-    //         Map("auth-facet" -> JsObject(Map("allow" -> JsBoolean(true)))),
-    //         authnReadPolicyId = Some("policy")
-    //       )
-
-    //     param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
-    //       TENANT_1
-    //     ) ~> param.api(Full).routes ~> check {
-    //       println(responseAs[String])
-    //       status shouldEqual StatusCodes.OK
-    //     }
-
-    //     Get(s"/v0/records/foo") ~> addTenantIdHeader(
-    //       TENANT_1
-    //     ) ~> param.api(Full).routes ~> check {
-    //       status shouldEqual StatusCodes.NotFound
-    //     }
-    // }
   }
 }

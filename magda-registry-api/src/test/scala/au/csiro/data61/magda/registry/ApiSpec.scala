@@ -130,7 +130,7 @@ abstract class ApiSpec
     GlobalSettings.loggingSQLAndTime = new LoggingSQLAndTimeSettings(
       enabled = true,
       singleLineMode = true,
-      logLevel = 'debug
+      logLevel = 'info
     )
 
     case class DBsWithEnvSpecificConfig(configToUse: Config)

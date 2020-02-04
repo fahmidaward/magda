@@ -18,7 +18,6 @@ import au.csiro.data61.magda.registry._
 import com.typesafe.config.Config
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, Outcome, fixture}
-import scalikejdbc.{GlobalSettings, LoggingSQLAndTimeSettings}
 import scalikejdbc._
 import scalikejdbc.config.{DBs, EnvPrefix, TypesafeConfig, TypesafeConfigReader}
 import spray.json.{JsObject, JsString, JsonParser}
@@ -420,10 +419,4 @@ abstract class ApiWithOpa
       (userId0, "record-2") -> testRecords(1).toJson.asJsObject,
       (userId2, "record-2") -> JsObject.empty
     )
-
-  GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
-    enabled = true,
-    singleLineMode = true,
-    logLevel = 'info
-  )
 }

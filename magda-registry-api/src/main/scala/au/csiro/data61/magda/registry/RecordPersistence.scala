@@ -204,7 +204,7 @@ trait RecordPersistence {
   def getPolicyIds(
       implicit session: DBSession,
       operation: AuthOperations.OperationType,
-      recordId: Option[String] = None,
+      recordId: Option[String] = None
       // aspectIds: List[String] = List()
   ): Try[List[String]]
 }
@@ -304,7 +304,7 @@ object DefaultRecordPersistence
         opaQueries,
         None,
         None,
-        None,
+        Some(1),
         dereference,
         List(Some(sqls"recordId=$id"))
       )
@@ -1209,7 +1209,7 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
   def getPolicyIds(
       implicit session: DBSession,
       operation: AuthOperations.OperationType,
-      recordId: Option[String] = None,
+      recordId: Option[String] = None
       // aspectIds: List[String] = List()
   ): Try[List[String]] = {
     // val aspectIdStatements =
@@ -1401,6 +1401,8 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
       })
       .list
       .apply()
+
+    println(result)
 
     val hasMore = result.length > limit
     val trimmed = result.take(limit)

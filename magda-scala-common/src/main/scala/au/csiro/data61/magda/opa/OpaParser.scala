@@ -55,7 +55,12 @@ object OpaTypes {
   case class OpaQueryExists(
       path: List[OpaRef]
   ) extends OpaQuery
+
+  /** A no-op query that occurs when OPA has determined that the query should be resolved regardless of unknowns */
   case object OpaQueryAllMatched extends OpaQuery
+
+  /** A no-op query that occurs when OPA has determined that the query cannot be resolved regardless of unknowns */
+  case object OpaQueryNoneMatched extends OpaQuery
   case object OpaQuerySkipAccessControl extends OpaQuery
 
   case class OpaPartialResponse(
@@ -223,6 +228,9 @@ object OpaParser {
               })
             })
         }
+      case None =>
+        // This happens if access is always disallowed for the input given to OPA
+        List(List(OpaQueryNoneMatched))
       case e => throw new Exception(s"Could not understand $e")
     }
 
