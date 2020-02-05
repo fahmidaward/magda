@@ -44,6 +44,7 @@ import au.csiro.data61.magda.model.Registry.{
 }
 import io.jsonwebtoken.SignatureAlgorithm
 import java.{util => ju}
+import au.csiro.data61.magda.registry.DefaultRecordPersistence
 
 abstract class ApiSpec
     extends FunSpec
@@ -120,7 +121,9 @@ abstract class ApiSpec
     //    webHookActorProbe.expectMsg(1 millis, WebHookActor.Process(true))
 
     val authClient =
-      new RegistryAuthApiClient(authHttpFetcher, DefaultRecordPersistence)(
+      new RegistryAuthApiClient(
+        authHttpFetcher
+      )(
         testConfig,
         system,
         executor,
@@ -177,7 +180,14 @@ abstract class ApiSpec
     try {
       super.withFixture(
         test.toNoArgTest(
-          FixtureParam(api, actor, asAdmin, asNonAdmin, authHttpFetcher, authClient)
+          FixtureParam(
+            api,
+            actor,
+            asAdmin,
+            asNonAdmin,
+            authHttpFetcher,
+            authClient
+          )
         )
       )
     } finally {

@@ -81,6 +81,9 @@ class Api(
 
   implicit val timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
 
+  val recordPersistence = new DefaultRecordPersistence(config)
+  val eventPersistence = new DefaultEventPersistence(recordPersistence)
+
   val roleDependentRoutes = webHookActorOption match {
     case Some(webHookActor) =>
       pathPrefix("aspects") {
@@ -98,7 +101,9 @@ class Api(
             webHookActor,
             authApiClient,
             system,
-            materializer
+            materializer,
+            recordPersistence,
+            eventPersistence
           ).route
         } ~
         pathPrefix("hooks") {
@@ -115,7 +120,14 @@ class Api(
         new AspectsServiceRO(config, authApiClient, system, materializer).route
       } ~
         pathPrefix("records") {
-          new RecordsServiceRO(authApiClient, config, system, materializer).route
+          new RecordsServiceRO(
+            authApiClient,
+            config,
+            system,
+            materializer,
+            recordPersistence,
+            eventPersistence
+          ).route
         }
   }
 

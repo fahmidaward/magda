@@ -145,59 +145,143 @@ class RecordsServiceAuthSpec extends ApiSpec {
             status shouldEqual StatusCodes.NotFound
           }
         }
-        //     "queries": [
-        //         [
-        //             {
-        //                 "index": 0,
-        //                 "terms": [
-        //                     {
-        //                         "type": "ref",
-        //                         "value": [
-        //                             {
-        //                                 "type": "var",
-        //                                 "value": "eq"
-        //                             }
-        //                         ]
-        //                     },
-        //                     {
-        //                         "type": "ref",
-        //                         "value": [
-        //                             {
-        //                                 "type": "var",
-        //                                 "value": "input"
-        //                             },
-        //                             {
-        //                                 "type": "string",
-        //                                 "value": "object"
-        //                             },
-        //                             {
-        //                                 "type": "string",
-        //                                 "value": "registry"
-        //                             },
-        //                             {
-        //                                 "type": "string",
-        //                                 "value": "record"
-        //                             },
-        //                             {
-        //                                 "type": "string",
-        //                                 "value": "esri-access-control"
-        //                             },
-        //                             {
-        //                                 "type": "string",
-        //                                 "value": "access"
-        //                             }
-        //                         ]
-        //                     },
-        //                     {
-        //                         "type": "string",
-        //                         "value": "public"
-        //                     }
-        //                 ]
-        //             }
-        //         ]
-        //     ]
-        // }
 
+        it(
+          "allows access to an record based on the value in an aspect"
+        ) { param =>
+          val recordId = "foo"
+          val record = Record(
+            recordId,
+            "foo",
+            Map(
+              "example" -> JsObject(
+                "nested" -> JsObject("public" -> JsString("true"))
+              )
+            )
+          )
+
+          param.asAdmin(
+            Post(
+              "/v0/aspects",
+              AspectDefinition(
+                "example",
+                "an example",
+                None
+              )
+            )
+          ) ~> addTenantIdHeader(
+            TENANT_1
+          ) ~> param
+            .api(Full)
+            .routes ~> check {
+            status shouldEqual StatusCodes.OK
+          }
+
+          (param.authFetcher
+            .post(
+              _: String,
+              _: HttpEntity.Strict,
+              _: List[HttpHeader]
+            )(
+              _: ToEntityMarshaller[HttpEntity.Strict]
+            ))
+            .expects(
+              "/opa/compile",
+              HttpEntity(
+                ContentTypes.`application/json`,
+                """{
+                  |  "query": "data.default.policy.read",
+                  |  "unknowns": ["input.object"]
+                  |}""".stripMargin
+              ),
+              *,
+              *
+            )
+            .returning(
+              Marshal(
+                """
+                {
+                  "result": {
+                    "queries": [
+                      [
+                        {
+                          "index": 0,
+                          "terms": [
+                            {
+                              "type": "ref",
+                              "value": [
+                                {
+                                  "type": "var",
+                                  "value": "eq"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "ref",
+                              "value": [
+                                {
+                                  "type": "var",
+                                  "value": "input"
+                                },
+                                {
+                                  "type": "string",
+                                  "value": "object"
+                                },
+                                {
+                                  "type": "string",
+                                  "value": "registry"
+                                },
+                                {
+                                  "type": "string",
+                                  "value": "record"
+                                },
+                                {
+                                  "type": "string",
+                                  "value": "example"
+                                },
+                                {
+                                  "type": "string",
+                                  "value": "nested"
+                                },
+                                {
+                                  "type": "string",
+                                  "value": "public"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "value": "true"
+                            }
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                }
+            """.stripMargin
+              ).to[ResponseEntity]
+                .map(
+                  HttpResponse(
+                    StatusCodes.OK,
+                    Nil,
+                    _
+                  )
+                )
+            )
+
+          param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
+            TENANT_1
+          ) ~> param.api(Full).routes ~> check {
+            status shouldEqual StatusCodes.OK
+          }
+
+          Get(s"/v0/records/foo") ~> addTenantIdHeader(
+            TENANT_1
+          ) ~> param.api(Full).routes ~> check {
+            status shouldEqual StatusCodes.OK
+          }
+        }
         // it("if OPA doesn't respond, it should respond as if acecss was denied") {
         //   param =>
         //     val aspectDefinition =

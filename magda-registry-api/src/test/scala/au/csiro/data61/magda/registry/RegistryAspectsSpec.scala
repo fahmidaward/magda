@@ -16,7 +16,6 @@ class RegistryAspectsSpec extends ApiSpec {
       aspectId: String,
       description: String = "a test aspect"
   ): AspectDefinition = {
-
     val aspectSchemaSrc: BufferedSource = fromFile(
       schemaFile
     )

@@ -22,10 +22,10 @@ class RecordAspectsServiceRO(
     authApiClient: RegistryAuthApiClient,
     system: ActorSystem,
     materializer: Materializer,
-    config: Config
+    config: Config,
+    recordPersistence: RecordPersistence
 ) extends Protocols
     with SprayJsonSupport {
-  private val recordPersistence = DefaultRecordPersistence
 
   /**
     * @apiGroup Registry Record Aspects
@@ -100,7 +100,12 @@ class RecordAspectsServiceRO(
       (recordId: String, aspectId: String) =>
         requiresTenantId { tenantId =>
           {
-            withRecordOpaQuery(AuthOperations.read, authApiClient)(
+            withRecordOpaQuery(
+              AuthOperations.read,
+              recordPersistence,
+              authApiClient,
+              Some(recordId)
+            )(
               config,
               system,
               materializer,

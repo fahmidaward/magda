@@ -24,7 +24,8 @@ class RecordsServiceRO(
     config: Config,
     system: ActorSystem,
     materializer: Materializer,
-    recordPersistence: RecordPersistence = DefaultRecordPersistence
+    recordPersistence: RecordPersistence,
+    eventPersistence: EventPersistence
 ) extends Protocols
     with SprayJsonSupport {
 
@@ -163,7 +164,11 @@ class RecordsServiceRO(
           ) =>
             val parsedAspectQueries = aspectQueries.map(AspectQuery.parse)
 
-            withRecordOpaQuery(AuthOperations.read, authApiClient)(
+            withRecordOpaQuery(
+              AuthOperations.read,
+              recordPersistence,
+              authApiClient
+            )(
               config,
               system,
               materializer,
@@ -269,7 +274,11 @@ class RecordsServiceRO(
       requiresTenantId { tenantId =>
         parameters('pageToken.?, 'start.as[Int].?, 'limit.as[Int].?) {
           (pageToken, start, limit) =>
-            withRecordOpaQuery(AuthOperations.read, authApiClient)(
+            withRecordOpaQuery(
+              AuthOperations.read,
+              recordPersistence,
+              authApiClient
+            )(
               config,
               system,
               materializer,
@@ -361,7 +370,11 @@ class RecordsServiceRO(
         parameters('aspect.*, 'aspectQuery.*) { (aspects, aspectQueries) =>
           val parsedAspectQueries = aspectQueries.map(AspectQuery.parse)
 
-          withRecordOpaQuery(AuthOperations.read, authApiClient)(
+          withRecordOpaQuery(
+            AuthOperations.read,
+            recordPersistence,
+            authApiClient
+          )(
             config,
             system,
             materializer,
@@ -453,7 +466,11 @@ class RecordsServiceRO(
         requiresTenantId { tenantId =>
           import scalikejdbc._
           parameters('aspect.*, 'limit.as[Int].?) { (aspect, limit) =>
-            withRecordOpaQuery(AuthOperations.read, authApiClient)(
+            withRecordOpaQuery(
+              AuthOperations.read,
+              recordPersistence,
+              authApiClient
+            )(
               this.config,
               system,
               materializer,
@@ -572,7 +589,11 @@ class RecordsServiceRO(
       requiresTenantId { tenantId =>
         parameters('aspect.*, 'optionalAspect.*, 'dereference.as[Boolean].?) {
           (aspects, optionalAspects, dereference) =>
-            withRecordOpaQuery(AuthOperations.read, authApiClient)(
+            withRecordOpaQuery(
+              AuthOperations.read,
+              recordPersistence,
+              authApiClient
+            )(
               config,
               system,
               materializer,
@@ -670,7 +691,11 @@ class RecordsServiceRO(
   def getByIdSummary: Route = get {
     path("summary" / Segment) { id =>
       requiresTenantId { tenantId =>
-        withRecordOpaQuery(AuthOperations.read, authApiClient)(
+        withRecordOpaQuery(
+          AuthOperations.read,
+          recordPersistence,
+          authApiClient
+        )(
           config,
           system,
           materializer,
@@ -700,7 +725,18 @@ class RecordsServiceRO(
       getPageTokens ~
       getById ~
       getByIdSummary ~
-      new RecordAspectsServiceRO(authApiClient, system, materializer, config).route ~
-      new RecordHistoryService(system, materializer).route
+      new RecordAspectsServiceRO(
+        authApiClient,
+        system,
+        materializer,
+        config,
+        recordPersistence
+      ).route ~
+      new RecordHistoryService(
+        system,
+        materializer,
+        recordPersistence,
+        eventPersistence
+      ).route
 
 }

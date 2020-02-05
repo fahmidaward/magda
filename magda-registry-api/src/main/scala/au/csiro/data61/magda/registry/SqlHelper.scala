@@ -28,52 +28,48 @@ object SqlHelper {
   def getOpaConditions(
       opaQueries: List[(String, List[List[OpaQuery]])],
       operationType: AuthOperations.OperationType,
-      recordId: Option[String] = None
+      defaultPolicyId: Option[String]
   ): SQLSyntax = opaQueries match {
     case Nil => SQL_TRUE
     case _ =>
-      val conditions = opaQueries.flatMap {
+      val queries = opaQueries.flatMap {
         case (policyId, Nil) =>
           None
         case (policyId, policyQueries) =>
-          Some(SQLSyntax.joinWithOr(
-            policyQueries.map { outerRule =>
+          val basePolicyIdClause = sqls"Records.authnReadPolicyId = ${policyId}"
+          // If this policy is the default policy, we need to also apply it to records with a null value in the policy column
+          val policyIdClauseWithDefault = defaultPolicyId match {
+            case Some(policyId) =>
+              sqls"($basePolicyIdClause OR Records.authnReadPolicyId IS NULL)"
+            case _ => basePolicyIdClause
+          }
+
+          val policySqlStatements = SQLSyntax.joinWithOr(policyQueries.map {
+            outerRule =>
               val queries = opaQueriesToWhereClauseParts(
                 outerRule
               )
 
-              val policyQuery = sqls"Records.authnReadPolicyId = $policyId"
-
               SQLSyntax.joinWithAnd(
-                (policyQuery +: queries): _*
+                queries: _*
               )
-            }: _*
-          ))
-      }
+          }: _*)
 
-      conditions match {
-        case Nil => SQL_TRUE
-        case _ => 
-      val theRecordId =
-        if (recordId.nonEmpty) sqls"$recordId" else sqls"Records.recordId"
-
-      val recordClause = recordId match {
-        case Some(recordId) => sqls"Records.recordId = $recordId"
-        case None           => SQL_TRUE
-      }
-
-      
-
-      sqls"""
-        EXISTS (
-            SELECT 1 FROM recordaspects
-            WHERE
-              ${recordClause} AND
-              (${SQLSyntax.joinWithOr(conditions: _*)})
+          Some(
+            sqls"""
+            (
+              $policyIdClauseWithDefault AND EXISTS (
+                SELECT 1 FROM recordaspects
+                WHERE
+                  Recordaspects.recordid = Records.recordid AND
+                  (${policySqlStatements})
+              )
+            )
+            """
           )
-        """
       }
 
+      SQLSyntax.joinWithOr(queries: _*)
   }
 
   /**
@@ -99,22 +95,22 @@ object SqlHelper {
   ): SQLSyntax = {
     query match {
       case AspectQuery(
-          _,
+          aspectId,
           List(fieldName, ANY_IN_ARRAY),
           value,
           SQL_EQ
           ) =>
         sqls"""
-             jsonb_exists((data->>$fieldName)::jsonb, $value::text)
+             aspectid = $aspectId AND jsonb_exists((data->>$fieldName)::jsonb, $value::text)
         """
       case AspectQuery(
-          _,
+          aspectId,
           path,
           value,
           sqlComparator
           ) =>
         sqls"""
-             data #>> string_to_array(${path
+             aspectid = $aspectId AND data #>> string_to_array(${path
           .mkString(",")}, ',') $sqlComparator $value
         """
       case e => throw new Exception(s"Could not handle query $e")

@@ -434,11 +434,14 @@ object WebHookActor {
     private val processor = new WebHookProcessor(
       context.system,
       registryApiBaseUrl,
+      recordPersistence,
       context.dispatcher
     )
     implicit val materializer: ActorMaterializer = ActorMaterializer()
     private var isProcessing: Boolean = false
     private var currentQueueLength = 0
+    val recordPersistence = new DefaultRecordPersistence(config)
+    val eventPersistence = new DefaultEventPersistence(recordPersistence)
 
     def getWebhook: WebHook =
       DB readOnly { implicit session =>
@@ -487,7 +490,7 @@ object WebHookActor {
               Future.successful(false)
             } else {
               val eventPage = DB readOnly { implicit session =>
-                EventPersistence.getEvents(
+                eventPersistence.getEvents(
                   session,
                   webHook.lastEvent,
                   None,

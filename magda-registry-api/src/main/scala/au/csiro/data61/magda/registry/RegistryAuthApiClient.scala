@@ -13,8 +13,7 @@ import au.csiro.data61.magda.client.HttpFetcher
 import java.net.URL
 
 class RegistryAuthApiClient(
-    authHttpFetcher: HttpFetcher,
-    recordPersistence: RecordPersistence
+    authHttpFetcher: HttpFetcher
 )(
     implicit config: Config,
     system: ActorSystem,
@@ -30,8 +29,7 @@ class RegistryAuthApiClient(
     this(
       HttpFetcher(
         new URL(config.getString("authApi.baseUrl"))
-      ),
-      DefaultRecordPersistence
+      )
     )(
       config,
       system,
@@ -47,31 +45,26 @@ class RegistryAuthApiClient(
   def queryForRecords(
       jwt: Option[String],
       operationType: AuthOperations.OperationType,
+      opaPolicyIds: List[String],
       recordId: Option[String] = None
   ): Future[List[(String, List[List[OpaQuery]])]] = {
 
     if (skipOpaQuery) {
       Future.successful(List())
     } else {
-      val policyIds = DB readOnly { session =>
-        recordPersistence.getPolicyIds(session, operationType, recordId)
-      } match {
-        case Success(Nil) =>
-          if (config.hasPath("opa.recordPolicyId")) {
-            List(config.getString("opa.recordPolicyId"))
-          } else {
-            throw new Exception(
-              "Error: Missing opa.recordPolicyId in the config."
-            )
-          }
-        case Success(policyIds: List[String]) =>
-          policyIds
-        case Failure(e: Throwable) => throw e
+      val defaultPolicyIdOpt =
+        if (config.hasPath("opa.recordPolicyId"))
+          Some(config.getString("opa.recordPolicyId"))
+        else None
+      val allPolicyIds = defaultPolicyIdOpt match {
+        case (Some(defaultPolicyId)) =>
+          opaPolicyIds :+ defaultPolicyId
+        case (None) => opaPolicyIds
       }
 
       super.queryRecord(
         jwt,
-        policyIds = policyIds.map(_ + "." + operationType.id)
+        policyIds = allPolicyIds.map(_ + "." + operationType.id)
       )
     }
   }
