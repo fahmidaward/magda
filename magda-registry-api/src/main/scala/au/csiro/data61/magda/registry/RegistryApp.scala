@@ -93,7 +93,6 @@ object RegistryApp extends App {
     Some(actor)
   } else None
 
-
   val recordPersistence = new DefaultRecordPersistence(config)
   val eventPersistence = new DefaultEventPersistence(recordPersistence)
 

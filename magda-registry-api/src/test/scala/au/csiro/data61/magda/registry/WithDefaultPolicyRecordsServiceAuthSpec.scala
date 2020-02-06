@@ -19,7 +19,8 @@ import akka.http.scaladsl.model.ResponseEntity
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
 
-class WithDefaultPolicyRecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
+class WithDefaultPolicyRecordsServiceAuthSpec
+    extends BaseRecordsServiceAuthSpec {
   override def testConfigSource =
     s"""
        |db.default.url = "${databaseUrl}?currentSchema=test"

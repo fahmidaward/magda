@@ -67,7 +67,9 @@ class AuthApiClient(authHttpFetcher: HttpFetcher)(
     Future.sequence(
       policyIds.map(
         policyId =>
-          queryPolicy(jwtToken, operationType, policyId).map(result => (policyId, result))
+          queryPolicy(jwtToken, operationType, policyId).map(
+            result => (policyId, result)
+          )
       )
     )
   }

@@ -56,7 +56,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
           }
         }
       }
-      
+
       commonTests()
     }
 
