@@ -15,6 +15,7 @@ import io.swagger.annotations._
 import javax.ws.rs.Path
 import scalikejdbc.DB
 
+import au.csiro.data61.magda.client.AuthOperations
 import scala.concurrent.ExecutionContext
 
 @Path("/records")
@@ -592,7 +593,8 @@ class RecordsServiceRO(
             withRecordOpaQuery(
               AuthOperations.read,
               recordPersistence,
-              authApiClient
+              authApiClient,
+              Some(id)
             )(
               config,
               system,
@@ -694,7 +696,8 @@ class RecordsServiceRO(
         withRecordOpaQuery(
           AuthOperations.read,
           recordPersistence,
-          authApiClient
+          authApiClient,
+          Some(id)
         )(
           config,
           system,

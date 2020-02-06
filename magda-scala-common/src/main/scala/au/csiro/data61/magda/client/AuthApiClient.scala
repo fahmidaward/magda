@@ -61,22 +61,24 @@ class AuthApiClient(authHttpFetcher: HttpFetcher)(
 
   def queryRecord(
       jwtToken: Option[String],
+      operationType: AuthOperations.OperationType,
       policyIds: List[String]
   ): Future[List[(String, List[List[OpaTypes.OpaQuery]])]] = {
     Future.sequence(
       policyIds.map(
         policyId =>
-          queryPolicy(jwtToken, policyId).map(result => (policyId, result))
+          queryPolicy(jwtToken, operationType, policyId).map(result => (policyId, result))
       )
     )
   }
 
   private def queryPolicy(
       jwtToken: Option[String],
+      operationType: AuthOperations.OperationType,
       policyId: String
   ): Future[List[List[OpaQuery]]] = {
     val requestData: String = s"""{
-                                 |  "query": "data.$policyId",
+                                 |  "query": "data.$policyId.${operationType.id}",
                                  |  "unknowns": ["input.object"]
                                  |}""".stripMargin
 

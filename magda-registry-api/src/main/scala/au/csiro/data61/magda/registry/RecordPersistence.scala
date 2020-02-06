@@ -18,6 +18,7 @@ import scalikejdbc._
 import spray.json._
 import spray.json.lenses.JsonLenses._
 import org.everit.json.schema.ValidationException
+import au.csiro.data61.magda.client.AuthOperations
 
 import scala.util.{Failure, Success, Try}
 import com.typesafe.config.Config
@@ -1196,11 +1197,7 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
       implicit session: DBSession,
       operation: AuthOperations.OperationType,
       recordId: Option[String] = None
-      // aspectIds: List[String] = List()
   ): Try[List[String]] = {
-    // val aspectIdStatements =
-    //   aspectIds.map(aspectId => sqls"""aspectId = $aspectId""")
-
     val recordIdClause = recordId match {
       case Some(recordId) => sqls"""recordid = ${recordId}"""
       case None           => SQLSyntax.empty

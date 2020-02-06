@@ -14,14 +14,12 @@ import io.jsonwebtoken.Jwts;
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.ResponseEntity
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.server.AuthenticationFailedRejection
 import akka.http.scaladsl.server.AuthorizationFailedRejection
 import akka.http.scaladsl.server.MethodRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.model._
 import au.csiro.data61.magda.Authentication
 import au.csiro.data61.magda.client.AuthApiClient
 import au.csiro.data61.magda.client.HttpFetcher
@@ -37,14 +35,10 @@ import scalikejdbc.config.TypesafeConfigReader
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.pattern.gracefulStop
-import au.csiro.data61.magda.model.Registry.{
-  MAGDA_ADMIN_PORTAL_ID,
-  MAGDA_TENANT_ID_HEADER,
-  MAGDA_SYSTEM_ID
-}
+import au.csiro.data61.magda.model.Registry._
 import io.jsonwebtoken.SignatureAlgorithm
 import java.{util => ju}
-import au.csiro.data61.magda.registry.DefaultRecordPersistence
+import akka.http.scaladsl.marshalling.ToEntityMarshaller
 
 abstract class ApiSpec
     extends FunSpec
@@ -57,15 +51,6 @@ abstract class ApiSpec
   override def beforeAll(): Unit = {
     Util.clearWebHookActorsCache()
   }
-
-  case class FixtureParam(
-      api: Role => Api,
-      webHookActor: ActorRef,
-      asAdmin: HttpRequest => HttpRequest,
-      asNonAdmin: HttpRequest => HttpRequest,
-      authFetcher: HttpFetcher,
-      authClient: RegistryAuthApiClient
-  )
 
   val databaseUrl = Option(System.getenv("POSTGRES_URL"))
     .getOrElse("jdbc:postgresql://localhost:5432/postgres")
@@ -280,4 +265,14 @@ abstract class ApiSpec
       }
     }
   }
+
+  case class FixtureParam(
+      api: Role => Api,
+      webHookActor: ActorRef,
+      asAdmin: HttpRequest => HttpRequest,
+      asNonAdmin: HttpRequest => HttpRequest,
+      authFetcher: HttpFetcher,
+      authClient: RegistryAuthApiClient
+  )
+
 }

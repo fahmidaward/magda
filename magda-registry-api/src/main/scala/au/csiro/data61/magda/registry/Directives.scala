@@ -8,8 +8,10 @@ import au.csiro.data61.magda.directives.AuthDirectives
 import au.csiro.data61.magda.opa.OpaTypes._
 import com.typesafe.config.Config
 import scalikejdbc.DB
+import au.csiro.data61.magda.client.AuthOperations
 
 import scala.concurrent.{ExecutionContext, Future}
+import akka.http.scaladsl.model.StatusCodes
 
 object Directives {
 
@@ -29,10 +31,14 @@ object Directives {
         recordPersistence.getPolicyIds(session, operationType, recordId)
       } get
       val recordFuture =
-        authApiClient.queryForRecords(jwt, operationType, dbPolicyIds)
+        authApiClient.queryForRecords(jwt, operationType, dbPolicyIds, recordId)
 
       onSuccess(recordFuture).flatMap { queryResults =>
-        provide(queryResults)
+        if (queryResults.isEmpty) {
+          complete(StatusCodes.NotFound)
+        } else {
+          provide(queryResults)
+        }
       }
     }
   }

@@ -11,6 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import au.csiro.data61.magda.client.AuthApiClient
 import au.csiro.data61.magda.client.HttpFetcher
 import java.net.URL
+import au.csiro.data61.magda.client.AuthOperations
 
 class RegistryAuthApiClient(
     authHttpFetcher: HttpFetcher
@@ -52,10 +53,16 @@ class RegistryAuthApiClient(
     if (skipOpaQuery) {
       Future.successful(List())
     } else {
+
+      /** Is this query for a single record that already has a policy? */
+      val singleRecordWithPolicySet = recordId.isDefined && !opaPolicyIds.isEmpty
       val defaultPolicyIdOpt =
-        if (config.hasPath("opa.recordPolicyId"))
+        if (!singleRecordWithPolicySet && config.hasPath("opa.recordPolicyId"))
           Some(config.getString("opa.recordPolicyId"))
         else None
+
+      println(recordId)
+      println(opaPolicyIds)
       val allPolicyIds = defaultPolicyIdOpt match {
         case (Some(defaultPolicyId)) =>
           opaPolicyIds :+ defaultPolicyId
@@ -64,7 +71,8 @@ class RegistryAuthApiClient(
 
       super.queryRecord(
         jwt,
-        policyIds = allPolicyIds.map(_ + "." + operationType.id)
+        operationType,
+        allPolicyIds
       )
     }
   }

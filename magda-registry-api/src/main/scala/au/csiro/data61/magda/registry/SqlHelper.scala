@@ -14,6 +14,7 @@ import au.csiro.data61.magda.opa.OpaTypes.{
   _
 }
 import scalikejdbc._
+import au.csiro.data61.magda.client.AuthOperations
 
 object SqlHelper {
 
