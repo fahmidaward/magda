@@ -427,6 +427,8 @@ object WebHookActor {
   )(implicit val config: Config)
       extends Actor
       with ActorLogging {
+    val recordPersistence = new DefaultRecordPersistence(config)
+    val eventPersistence = new DefaultEventPersistence(recordPersistence)
     case object WakeUp
     import context.dispatcher
     private val SOURCE_QUEUE_BUFFER_SIZE =
@@ -440,8 +442,6 @@ object WebHookActor {
     implicit val materializer: ActorMaterializer = ActorMaterializer()
     private var isProcessing: Boolean = false
     private var currentQueueLength = 0
-    val recordPersistence = new DefaultRecordPersistence(config)
-    val eventPersistence = new DefaultEventPersistence(recordPersistence)
 
     def getWebhook: WebHook =
       DB readOnly { implicit session =>
@@ -574,7 +574,9 @@ object WebHookActor {
           } catch {
             // --- make only capture nonFatal error
             // --- So that fatal error can still terminate JVM
-            case NonFatal(_) => Future.successful(false)
+            case NonFatal(e) =>
+              log.error(e, "Encountered non-fatal error")
+              Future.successful(false)
           }
         }
         .map { x =>

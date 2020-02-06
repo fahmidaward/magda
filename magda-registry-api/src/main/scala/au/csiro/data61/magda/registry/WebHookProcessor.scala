@@ -22,10 +22,6 @@ import au.csiro.data61.magda.model.TenantId.AllTenantsId
 
 /**
   * The processor sends notifications to a subscriber via web hook.
-  *
-  * @param actorSystem
-  * @param publicUrl
-  * @param executionContext
   */
 class WebHookProcessor(
     actorSystem: ActorSystem,

@@ -14,6 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import akka.http.scaladsl.model.StatusCodes
 
 object Directives {
+  private def skipOpaQuery(implicit config: Config) =
+    config.hasPath("authorization.skipOpaQuery") && config.getBoolean(
+      "authorization.skipOpaQuery"
+    )
 
   def withRecordOpaQuery(
       operationType: AuthOperations.OperationType,
@@ -27,17 +31,22 @@ object Directives {
       ec: ExecutionContext
   ): Directive1[List[(String, List[List[OpaQuery]])]] = {
     AuthDirectives.getJwt().flatMap { jwt =>
-      val dbPolicyIds = DB readOnly { session =>
-        recordPersistence.getPolicyIds(session, operationType, recordId)
-      } get
-      val recordFuture =
-        authApiClient.queryForRecords(jwt, operationType, dbPolicyIds, recordId)
+      if (skipOpaQuery) {
+        provide(List())
+      } else {
+        val dbPolicyIds = DB readOnly { session =>
+          recordPersistence.getPolicyIds(session, operationType, recordId)
+        } get
+        val recordFuture =
+          authApiClient
+            .queryForRecords(jwt, operationType, dbPolicyIds, recordId)
 
-      onSuccess(recordFuture).flatMap { queryResults =>
-        if (queryResults.isEmpty) {
-          complete(StatusCodes.NotFound)
-        } else {
-          provide(queryResults)
+        onSuccess(recordFuture).flatMap { queryResults =>
+          if (queryResults.isEmpty) {
+            complete(StatusCodes.NotFound)
+          } else {
+            provide(queryResults)
+          }
         }
       }
     }

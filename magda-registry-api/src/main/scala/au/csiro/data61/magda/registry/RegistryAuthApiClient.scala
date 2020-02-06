@@ -38,10 +38,6 @@ class RegistryAuthApiClient(
       materializer
     )
   }
-  private def skipOpaQuery(implicit config: Config) =
-    config.hasPath("authorization.skipOpaQuery") && config.getBoolean(
-      "authorization.skipOpaQuery"
-    )
 
   def queryForRecords(
       jwt: Option[String],
@@ -50,30 +46,24 @@ class RegistryAuthApiClient(
       recordId: Option[String] = None
   ): Future[List[(String, List[List[OpaQuery]])]] = {
 
-    if (skipOpaQuery) {
-      Future.successful(List())
-    } else {
+    /** Is this query for a single record that already has a policy? */
+    val singleRecordWithPolicySet = recordId.isDefined && !opaPolicyIds.isEmpty
+    val defaultPolicyIdOpt =
+      if (!singleRecordWithPolicySet && config.hasPath("opa.recordPolicyId"))
+        Some(config.getString("opa.recordPolicyId"))
+      else None
 
-      /** Is this query for a single record that already has a policy? */
-      val singleRecordWithPolicySet = recordId.isDefined && !opaPolicyIds.isEmpty
-      val defaultPolicyIdOpt =
-        if (!singleRecordWithPolicySet && config.hasPath("opa.recordPolicyId"))
-          Some(config.getString("opa.recordPolicyId"))
-        else None
-
-      println(recordId)
-      println(opaPolicyIds)
-      val allPolicyIds = defaultPolicyIdOpt match {
-        case (Some(defaultPolicyId)) =>
-          opaPolicyIds :+ defaultPolicyId
-        case (None) => opaPolicyIds
-      }
-
-      super.queryRecord(
-        jwt,
-        operationType,
-        allPolicyIds
-      )
+    val allPolicyIds = defaultPolicyIdOpt match {
+      case (Some(defaultPolicyId)) =>
+        opaPolicyIds :+ defaultPolicyId
+      case (None) => opaPolicyIds
     }
+
+    super.queryRecord(
+      jwt,
+      operationType,
+      allPolicyIds
+    )
+
   }
 }

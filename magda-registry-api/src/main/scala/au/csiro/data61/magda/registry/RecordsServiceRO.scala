@@ -175,7 +175,6 @@ class RecordsServiceRO(
               materializer,
               ec
             ) { opaQueries =>
-              assert(opaQueries.nonEmpty)
               complete {
                 DB readOnly { session =>
                   recordPersistence.getAllWithAspects(
@@ -285,8 +284,6 @@ class RecordsServiceRO(
               materializer,
               ec
             ) { opaQueries =>
-              assert(opaQueries.nonEmpty)
-
               complete {
                 DB readOnly { session =>
                   recordPersistence
@@ -381,8 +378,6 @@ class RecordsServiceRO(
             materializer,
             ec
           ) { opaQueries =>
-            assert(opaQueries.nonEmpty)
-
             complete {
               DB readOnly { session =>
                 CountResponse(
@@ -477,7 +472,6 @@ class RecordsServiceRO(
               materializer,
               ec
             ) { opaQueries =>
-              assert(opaQueries.nonEmpty)
               complete {
                 DB readOnly { session =>
                   "0" :: recordPersistence
@@ -601,8 +595,6 @@ class RecordsServiceRO(
               materializer,
               ec
             ) { opaQueries =>
-              println(opaQueries)
-              assert(opaQueries.nonEmpty)
               DB readOnly { session =>
                 recordPersistence.getByIdWithAspects(
                   session,
@@ -704,8 +696,6 @@ class RecordsServiceRO(
           materializer,
           ec
         ) { opaQueries =>
-          assert(opaQueries.nonEmpty)
-
           DB readOnly { session =>
             recordPersistence.getById(session, tenantId, opaQueries, id) match {
               case Some(record) => complete(record)
