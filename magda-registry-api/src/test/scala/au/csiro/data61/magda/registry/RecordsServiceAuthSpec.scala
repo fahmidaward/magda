@@ -28,6 +28,8 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
     """.stripMargin
 
   describe("without a default policy set") {
+    commonTests()
+
     describe("GET") {
       describe("for a single record") {
         it(
@@ -57,9 +59,81 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         }
       }
 
-      commonTests()
     }
 
+    describe("for multiple records") {
+      it(
+        "allows access to aspect-less records if default policy resolves to unconditionally allow access to everything"
+      ) { param =>
+        val recordId = "foo"
+
+        for (i <- 1 to 5) {
+          addRecord(
+            param,
+            Record(
+              recordId + i,
+              recordId + i,
+              Map(),
+              authnReadPolicyId = Some("not.default.policyid")
+            )
+          )
+        }
+
+        expectOpaQueryForPolicy(
+          param,
+          "not.default.policyid.read",
+          """{
+            "result": {
+                "queries": []
+            }
+          }"""
+        )
+
+        Get(s"/v0/records") ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          status shouldEqual StatusCodes.OK
+          val resPage = responseAs[RecordsPage[Record]]
+
+          resPage.records.length shouldBe 5
+        }
+      }
+
+      it(
+        "denies access to aspect-less records if default policy resolves to unconditionally deny access to them"
+      ) { param =>
+        val recordId = "foo"
+
+        for (i <- 1 to 5) {
+          addRecord(
+            param,
+            Record(
+              recordId + i,
+              recordId + i,
+              Map(),
+              authnReadPolicyId = Some("not.default.policyid")
+            )
+          )
+        }
+
+        expectOpaQueryForPolicy(
+          param,
+          "not.default.policyid.read",
+          """{
+            "result": {}
+          }"""
+        )
+
+        Get(s"/v0/records") ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          status shouldEqual StatusCodes.OK
+          val resPage = responseAs[RecordsPage[Record]]
+
+          resPage.records.length shouldBe 0
+        }
+      }
+    }
   }
 
 }
