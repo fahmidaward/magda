@@ -81,7 +81,7 @@ export const specificRecordArb = (aspectArbs: {
         aspects: jsc.record(aspectArbs),
         sourceTag: jsc.constant(undefined),
         tenantId: intArb,
-        authnReadPolicyId: undefined
+        authnReadPolicyId: jsc.constant(undefined)
     });
 
 const defaultSchemeArb = jsc.oneof([
