@@ -69,7 +69,7 @@ export const recordArb = jsc.record<Record>({
     aspects: jsc.suchthat(jsc.array(jsc.json), arr => arr.length <= 10),
     sourceTag: jsc.constant(undefined),
     tenantId: intArb,
-    authnReadPolicyId: undefined
+    authnReadPolicyId: jsc.constant(undefined)
 });
 
 export const specificRecordArb = (aspectArbs: {
