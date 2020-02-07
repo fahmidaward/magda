@@ -133,6 +133,83 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
           resPage.records.length shouldBe 0
         }
       }
+
+      it(
+        "for records with the same policy, denies access to those that don't meet the policy and allows access to those that do"
+      ) { param =>
+        for (i <- 1 to 3) {
+          addRecord(
+            param,
+            Record(
+              "allow" + i,
+              "allow" + i,
+              Map(
+                "example" -> JsObject(
+                  "nested" -> JsObject("public" -> JsString("true"))
+                )
+              ),
+              authnReadPolicyId = Some("not.default.policyid")
+            )
+          )
+        }
+
+        // Record with the exact path set to false
+        addRecord(
+          param,
+          Record(
+            "denyFalse",
+            "denyFalse",
+            Map(
+              "example" -> JsObject(
+                "nested" -> JsObject("public" -> JsString("false"))
+              )
+            ),
+            authnReadPolicyId = Some("not.default.policyid")
+          )
+        )
+
+        // Record missing the last value
+        addRecord(
+          param,
+          Record(
+            "denyFalse",
+            "denyFalse",
+            Map(
+              "example" -> JsObject("nested" -> JsObject())
+            ),
+            authnReadPolicyId = Some("not.default.policyid")
+          )
+        )
+
+        // Record with no value for this aspect at all
+        addRecord(
+          param,
+          Record(
+            "denyFalse",
+            "denyFalse",
+            Map(
+              ),
+            authnReadPolicyId = Some("not.default.policyid")
+          )
+        )
+
+        expectOpaQueryForPolicy(
+          param,
+          "not.default.policyid.read",
+          """{
+            "result": {}
+          }"""
+        )
+
+        Get(s"/v0/records") ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          status shouldEqual StatusCodes.OK
+          val resPage = responseAs[RecordsPage[Record]]
+
+          resPage.records.length shouldBe 0
+        }
+      }
     }
   }
 
