@@ -254,12 +254,15 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
   """
 
   def addExampleAspectDef(param: FixtureParam) =
+    addAspectDef(param, "example")
+
+  def addAspectDef(param: FixtureParam, id: String) =
     param.asAdmin(
       Post(
         "/v0/aspects",
         AspectDefinition(
-          "example",
-          "an example",
+          id,
+          id,
           None
         )
       )
@@ -313,6 +316,9 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
     param.asAdmin(Post("/v0/records", record)) ~> addTenantIdHeader(
       TENANT_1
     ) ~> param.api(Full).routes ~> check {
+      if (status !== StatusCodes.OK) {
+        println(response.entity.toString())
+      }
       status shouldEqual StatusCodes.OK
     }
   }

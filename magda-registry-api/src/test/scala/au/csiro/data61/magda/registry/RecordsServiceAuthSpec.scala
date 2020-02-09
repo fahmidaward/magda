@@ -137,6 +137,8 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
       it(
         "for records with the same policy, denies access to those that don't meet the policy and allows access to those that do"
       ) { param =>
+        addExampleAspectDef(param)
+
         for (i <- 1 to 3) {
           addRecord(
             param,
@@ -157,8 +159,8 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         addRecord(
           param,
           Record(
-            "denyFalse",
-            "denyFalse",
+            "deny1",
+            "deny1",
             Map(
               "example" -> JsObject(
                 "nested" -> JsObject("public" -> JsString("false"))
@@ -172,8 +174,8 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         addRecord(
           param,
           Record(
-            "denyFalse",
-            "denyFalse",
+            "deny2",
+            "deny2",
             Map(
               "example" -> JsObject("nested" -> JsObject())
             ),
@@ -185,10 +187,9 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         addRecord(
           param,
           Record(
-            "denyFalse",
-            "denyFalse",
-            Map(
-              ),
+            "deny3",
+            "deny3",
+            Map(),
             authnReadPolicyId = Some("not.default.policyid")
           )
         )
@@ -196,9 +197,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         expectOpaQueryForPolicy(
           param,
           "not.default.policyid.read",
-          """{
-            "result": {}
-          }"""
+          defaultPolicyResponse
         )
 
         Get(s"/v0/records") ~> addTenantIdHeader(
@@ -207,10 +206,163 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
           status shouldEqual StatusCodes.OK
           val resPage = responseAs[RecordsPage[Record]]
 
-          resPage.records.length shouldBe 0
+          resPage.records.length shouldBe 3
+          resPage.records.forall(_.id.startsWith("allow"))
+        }
+      }
+
+      it(
+        "when records have different policies, displays records with matching policies"
+      ) { param =>
+        addAspectDef(param, "example1")
+        addAspectDef(param, "example2")
+
+        addRecord(
+          param,
+          Record(
+            "allowExample1",
+            "allowExample1",
+            Map(
+              "example1" -> JsObject(
+                "nested" -> JsObject("public" -> JsString("true"))
+              )
+            ),
+            authnReadPolicyId = Some("example1.policy")
+          )
+        )
+        addRecord(
+          param,
+          Record(
+            "denyExample1",
+            "denyExample1",
+            Map(
+              "example1" -> JsObject(
+                "nested" -> JsObject("public" -> JsString("false"))
+              )
+            ),
+            authnReadPolicyId = Some("example1.policy")
+          )
+        )
+        addRecord(
+          param,
+          Record(
+            "allowExample2",
+            "allowExample2",
+            Map(
+              "example2" -> JsObject(
+                "array" -> JsArray(
+                  JsNumber(-1),
+                  JsNumber(-5),
+                  JsNumber(-2)
+                )
+              )
+            ),
+            authnReadPolicyId = Some("example2.policy")
+          )
+        )
+        addRecord(
+          param,
+          Record(
+            "denyExample2",
+            "denyExample2",
+            Map(
+              "example2" -> JsObject(
+                "array" -> JsArray(
+                  JsNumber(-3),
+                  JsNumber(2),
+                  JsNumber(-4)
+                )
+              )
+            ),
+            authnReadPolicyId = Some("example2.policy")
+          )
+        )
+
+        expectOpaQueryForPolicy(
+          param,
+          "example1.policy",
+          defaultPolicyResponse
+        )
+
+        expectOpaQueryForPolicy(
+          param,
+          "example2.policy",
+          defaultPolicyResponse
+        )
+
+        Get(s"/v0/records") ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          status shouldEqual StatusCodes.OK
+          val resPage = responseAs[RecordsPage[Record]]
+
+          resPage.records.length shouldBe 3
+          resPage.records.forall(_.id.startsWith("allow"))
         }
       }
     }
   }
 
+  val policyResponseWithArray = """
+      {
+        "result": {
+          "queries": [
+                  {
+                    "index": 0,
+                    "terms": [
+                      {
+                        "type": "ref",
+                        "value": [
+                          {
+                            "type": "var",
+                            "value": "gte"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "number",
+                    "value": 0
+                  },
+                  {
+                    "type": "ref",
+                    "value": [
+                        {
+                        "type": "var",
+                        "value": "input"
+                      },
+                      {
+                        "type": "string",
+                        "value": "object"
+                      },
+                      {
+                        "type": "string",
+                        "value": "registry"
+                      },
+                      {
+                        "type": "string",
+                        "value": "record"
+                      },
+                      {
+                        "type": "string",
+                        "value": "example"
+                      },
+                      {
+                        "type": "var",
+                        "value": "$02"
+                      },
+                      {
+                        "type": "string",
+                        "value": "clearance_level"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+  """
 }
