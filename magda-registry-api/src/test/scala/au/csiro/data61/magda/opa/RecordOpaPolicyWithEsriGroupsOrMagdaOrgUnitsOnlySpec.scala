@@ -25,7 +25,6 @@ abstract class RecordOpaPolicyWithEsriGroupsOrMagdaOrgUnitsOnlySpec
             case (record, recordIndex) =>
               val recordId = record.id
 
-              // println(userId)
               Get(s"/v0/records/$recordId/aspects/$organizationId") ~> addTenantIdHeader(
                 TENANT_0
               ) ~> addJwtToken(userId) ~> param
@@ -644,7 +643,6 @@ abstract class RecordOpaPolicyWithEsriGroupsOrMagdaOrgUnitsOnlySpec
         status shouldBe StatusCodes.OK
         val record = responseAs[Record]
         record.id shouldBe referencingRecordId
-        println(record)
         record
           .aspects(withLinkId)
           .fields(linkName) shouldEqual JsObject.empty

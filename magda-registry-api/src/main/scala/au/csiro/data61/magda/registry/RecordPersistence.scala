@@ -1492,6 +1492,14 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
     JsonParser(rs.string("data")).asJsObject
   }
 
+  /**
+    * Given a list of aspect ids, queries each of them to see if the aspects link to other aspects.
+    *
+    * @returns a Map of aspect ids to the first field inside that aspect that links to another aspect.
+    *
+    * Note that currently, links can only be at the first level of an aspect, and only one is supported
+    * per aspect.
+    */
   def buildReferenceMap(
       implicit session: DBSession,
       aspectIds: Iterable[String]
@@ -1630,101 +1638,112 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
     val result: Iterable[SQLSyntax] = aspectIds.zipWithIndex.map {
       case (aspectId, index) =>
         val aspectColumnName = getAspectColumnName(index)
+
         val selection = referenceDetails
           .get(aspectId)
           .map {
             case PropertyWithLink(propertyName, true) =>
-              sqls"""(
-                      (with d as (select (
-                          case when $dereference then (
-                            CASE WHEN EXISTS (SELECT FROM jsonb_array_elements_text(RecordAspects.data->$propertyName)) THEN (
-                              select jsonb_set(
-                                RecordAspects.data,
-                                ${"{\"" + propertyName + "\"}"}::text[],
-                                jsonb_agg(
-                                  jsonb_build_object(
-                                    'id',
-                                    Records.recordId,
-                                    'name',
-                                    Records.name,
-                                    'aspects',
-                                    (
-                                      select jsonb_object_agg(aspectId, data)
-                                      from RecordAspects
-                                      where tenantId=Records.tenantId and recordId=Records.recordId
-                                    )
-                                  )
-                                  order by ordinality
-                                )
-                              )
-                              from Records
-                              inner join jsonb_array_elements_text(RecordAspects.data->$propertyName) with ordinality as aggregatedId
-                              on aggregatedId.value=Records.recordId and RecordAspects.tenantId=Records.tenantId
-                              where $opaConditions
+              // The property is an array
+              val linkedAspectsClause =
+                if (dereference)
+                  sqls"""
+                    -- If a link exists in this aspect, then get every aspect from the linked record and bung it in
+                    -- to the aspect data
+                    CASE WHEN EXISTS (SELECT FROM jsonb_array_elements_text(RecordAspects.data->$propertyName)) THEN (
+                      SELECT jsonb_set(
+                        RecordAspects.data,
+                        ${"{\"" + propertyName + "\"}"}::text[],
+                        jsonb_agg(
+                          jsonb_build_object(
+                            'id',
+                            Records.recordId,
+                            'name',
+                            Records.name,
+                            'aspects',
+                            (
+                              SELECT jsonb_object_agg(aspectId, data)
+                              FROM RecordAspects
+                              WHERE tenantId=Records.tenantId AND recordId=Records.recordId
                             )
-                            ELSE (
-                              select data from RecordAspects
-                              where (aspectId, recordid, tenantId) = ($aspectId, Records.recordId, Records.tenantId)
-                            )
-                            END
                           )
-                          else (
-                            CASE WHEN EXISTS (SELECT FROM jsonb_array_elements_text(RecordAspects.data->$propertyName)) THEN (
-                                select jsonb_set(
-                                         RecordAspects.data,
-                                         ${"{\"" + propertyName + "\"}"}::text[],
-                                         jsonb_agg(Records.recordId))
-                                from Records
-                                inner join jsonb_array_elements_text(RecordAspects.data->$propertyName) as aggregatedId
-                                on aggregatedId=Records.recordId and RecordAspects.tenantId=Records.tenantId
-                                where $opaConditions
-                            )
-                            ELSE (
-                              select data from RecordAspects
-                              where (aspectId, recordid, tenantId) = ($aspectId, Records.recordId, Records.tenantId)
-                            )
-                            END
-                          )
-                          end
-                        ))
-
-                        select coalesce(
-                          (select * from d),
-                          (select jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '[]'::jsonb))
+                          order by ordinality
                         )
                       )
+                      FROM Records
+                      INNER JOIN jsonb_array_elements_text(RecordAspects.data->$propertyName)
+                        WITH ordinality AS aggregatedId
+                        ON aggregatedId.value=Records.recordId AND RecordAspects.tenantId=Records.tenantId
+                      WHERE $opaConditions
+                    )
+                    -- If there's no link in this aspect, just get the raw aspect data
+                    ELSE (
+                      select data from RecordAspects
+                      where (aspectId, recordid, tenantId) = ($aspectId, Records.recordId, Records.tenantId)
+                    )
+                    END
+                  """
+                else
+                  sqls"""
+                    -- If the linked value exists, set the property to the id of the record it links to
+                    CASE WHEN EXISTS (SELECT FROM jsonb_array_elements_text(RecordAspects.data->$propertyName)) THEN (
+                      select jsonb_set(
+                        RecordAspects.data,
+                        ${"{\"" + propertyName + "\"}"}::text[],
+                        jsonb_agg(Records.recordId)
+                      )
+                      from Records
+                      inner join jsonb_array_elements_text(RecordAspects.data->$propertyName) as aggregatedId
+                      on aggregatedId=Records.recordId and RecordAspects.tenantId=Records.tenantId
+                      where $opaConditions
+                    )
+                    -- If there's no linked value, just return the raw aspect data
+                    ELSE (
+                      select data from RecordAspects
+                      where (aspectId, recordid, tenantId) = ($aspectId, Records.recordId, Records.tenantId)
+                    )
+                    END
+                  """
+
+              // Return the linked aspects if there are any, otherwise just return an empty array.
+              sqls"""(
+                SELECT COALESCE(
+                  (SELECT ($linkedAspectsClause)),
+                  (SELECT jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '[]'::jsonb))
+                )
               )"""
             case PropertyWithLink(propertyName, false) =>
-              sqls"""(
-                       (with d as ( select
-                             (select
-                             case when $dereference then
-                               jsonb_set(
-                                 RecordAspects.data,
-                                 ${"{\"" + propertyName + "\"}"}::text[],
-                                 jsonb_build_object(
-                                   'id', Records.recordId,
-                                   'name', Records.name,
-                                   'aspects', (
-                                     select jsonb_object_agg(aspectId, data) from RecordAspects
-                                     where tenantId=Records.tenantId and recordId=Records.recordId)))
-                             else RecordAspects.data
-                             end
-                             from Records where Records.tenantId=RecordAspects.tenantId and
-                             Records.recordId=RecordAspects.data->>$propertyName and $opaConditions)
-                           )
+              // The property is an object
 
-                           select coalesce(
-                             (select * from d),
-                             case when $dereference then
-                             (select jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '{}'::jsonb))
-                             else
-                             (select jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '""'::jsonb))
-                             end
-                           )
+              val linkedAspectsClause =
+                if (dereference)
+                  sqls"""
+                    jsonb_set(
+                      RecordAspects.data,
+                      ${"{\"" + propertyName + "\"}"}::text[],
+                      jsonb_build_object(
+                        'id', Records.recordId,
+                        'name', Records.name,
+                        'aspects', (
+                          select jsonb_object_agg(aspectId, data) from RecordAspects
+                          where tenantId=Records.tenantId and recordId=Records.recordId)
                         )
+                      )
+                """
+                else
+                  sqls"""data"""
 
-                     )"""
+              val defaultClause =
+                if (dereference)
+                  sqls"""(select jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '{}'::jsonb))"""
+                else
+                  sqls"""(select jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '""'::jsonb))"""
+
+              sqls"""(
+                select coalesce(
+                  $linkedAspectsClause,
+                  ${defaultClause}
+                )    
+              )"""
           }
           .getOrElse(sqls"data")
 

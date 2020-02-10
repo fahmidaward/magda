@@ -89,22 +89,11 @@ class AuthApiClient(authHttpFetcher: HttpFetcher)(
       case None      => List()
     }
 
-    // val httpRequest = HttpRequest(
-    //   uri = s"$opaUrl/compile",
-    //   method = HttpMethods.POST,
-    //   entity = HttpEntity(ContentTypes.`application/json`, requestData),
-    //   headers = headers
-    // )
-
-    // Http()
-    //   .singleRequest(httpRequest)
-    //   .flatMap(receiveOpaResponse[List[List[OpaQuery]]](_) { json =>
-    //     parseOpaResponse(json)
-    //   })
+    // println(requestData)
 
     authHttpFetcher
       .post(
-        s"/opa/compile",
+        s"/v0/opa/compile",
         HttpEntity(ContentTypes.`application/json`, requestData),
         headers
       )

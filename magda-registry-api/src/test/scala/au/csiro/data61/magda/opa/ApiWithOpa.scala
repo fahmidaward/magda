@@ -41,6 +41,12 @@ abstract class ApiWithOpa
     with MockFactory
     with AuthProtocols {
 
+  GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
+    enabled = false,
+    singleLineMode = true,
+    logLevel = 'info
+  )
+  
   override def testConfigSource: String =
     super.testConfigSource + s"""
                                 |opa.recordPolicyId="object.registry.record.esri_owner_groups"
@@ -384,8 +390,6 @@ abstract class ApiWithOpa
       sql"Delete from public.records".update
         .apply()
     }
-
-    println(testRecords)
 
     testRecords.map(record => {
       Get(s"/v0/records/${record.id}") ~> addTenantIdHeader(TENANT_0) ~> addJwtToken(
