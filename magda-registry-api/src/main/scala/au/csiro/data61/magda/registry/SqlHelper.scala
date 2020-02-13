@@ -73,7 +73,7 @@ object SqlHelper {
           )
       }
 
-      SQLSyntax.joinWithOr(queries: _*)
+      sqls"""(${SQLSyntax.joinWithOr(queries: _*)})"""
   }
 
   /**

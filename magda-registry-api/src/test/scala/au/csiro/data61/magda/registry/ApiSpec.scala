@@ -116,7 +116,7 @@ abstract class ApiSpec
       )
 
     GlobalSettings.loggingSQLAndTime = new LoggingSQLAndTimeSettings(
-      enabled = true,
+      enabled = false,
       singleLineMode = true,
       logLevel = 'info
     )

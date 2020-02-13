@@ -36,7 +36,6 @@ object AuthDirectives {
       implicit system: ActorSystem,
       config: Config
   ): Directive1[String] = {
-    // println("user id!!!")
     if (skipAuthorization) {
       provide("dummyUserId")
     } else {

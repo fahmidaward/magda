@@ -119,7 +119,6 @@ object OpaConsts {
 object OpaParser {
 
   def parseOpaResponse(json: JsValue): List[List[OpaQuery]] = {
-    // println(json)
     val result = json.asJsObject.fields
       .get("result") match {
       case Some(aResult) => aResult

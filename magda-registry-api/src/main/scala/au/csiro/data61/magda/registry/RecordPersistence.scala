@@ -366,7 +366,7 @@ class DefaultRecordPersistence(config: Config)
                          where RecordAspects.recordId=Records.recordId
                          and aspectId=$aspectId
                          and ${SQLUtil.tenantIdToWhereClause(tenantId)}
-                         and data->${propertyWithLink.propertyName} ??| ARRAY[$ids])"""
+                         and jsonb_exists_any(data->${propertyWithLink.propertyName}, ARRAY[$ids]))"""
       }
 
       val excludeSelector =
@@ -1724,8 +1724,8 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
                         'id', Records.recordId,
                         'name', Records.name,
                         'aspects', (
-                          select jsonb_object_agg(aspectId, data) from RecordAspects
-                          where tenantId=Records.tenantId and recordId=Records.recordId)
+                          SELECT jsonb_object_agg(aspectId, data) from RecordAspects
+                          WHERE tenantId=Records.tenantId and recordId=Records.recordId)
                         )
                       )
                 """
@@ -1734,15 +1734,23 @@ where (RecordAspects.recordId, RecordAspects.aspectId)=($recordId, $aspectId) AN
 
               val defaultClause =
                 if (dereference)
-                  sqls"""(select jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '{}'::jsonb))"""
+                  sqls"""SELECT jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '{}'::jsonb)"""
                 else
-                  sqls"""(select jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '""'::jsonb))"""
+                  sqls"""SELECT jsonb_set(RecordAspects.data, ${"{\"" + propertyName + "\"}"}::text[], '""'::jsonb)"""
 
               sqls"""(
-                select coalesce(
-                  $linkedAspectsClause,
-                  ${defaultClause}
-                )    
+                SELECT coalesce (
+                  (
+                    SELECT ($linkedAspectsClause) 
+                    FROM Records
+                    WHERE Records.tenantId=RecordAspects.tenantId AND
+                      Records.recordId=RecordAspects.data->>$propertyName
+                      AND $opaConditions
+                  ),
+                  (
+                    ${defaultClause}
+                  )
+                )
               )"""
           }
           .getOrElse(sqls"data")

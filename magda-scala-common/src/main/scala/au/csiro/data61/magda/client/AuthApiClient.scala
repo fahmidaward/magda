@@ -89,8 +89,6 @@ class AuthApiClient(authHttpFetcher: HttpFetcher)(
       case None      => List()
     }
 
-    // println(requestData)
-
     authHttpFetcher
       .post(
         s"/v0/opa/compile",

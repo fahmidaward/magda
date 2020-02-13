@@ -59,8 +59,7 @@
             "withLinks": {
                 "someLinks": ["record-1", "record-3"]
             }
-        },
-        "authnReadPolicyId": "object.registry.record.public"
+        }
     },
 
     {
