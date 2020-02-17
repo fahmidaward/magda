@@ -39,8 +39,11 @@ object SqlHelper {
         case (policyId, policyQueries) =>
           val basePolicyIdClause = sqls"Records.authnReadPolicyId = ${policyId}"
           // If this policy is the default policy, we need to also apply it to records with a null value in the policy column
+          // println(defaultPolicyId + "/" + policyId)
+
           val policyIdClauseWithDefault = defaultPolicyId match {
-            case Some(policyId) =>
+            case Some(innerDefaultPolicyId)
+                if innerDefaultPolicyId == policyId =>
               sqls"($basePolicyIdClause OR Records.authnReadPolicyId IS NULL)"
             case _ => basePolicyIdClause
           }
@@ -70,7 +73,10 @@ object SqlHelper {
           )
       }
 
-      SQLSyntax.joinWithOr(queries: _*)
+      queries match {
+        case Nil => SQL_TRUE
+        case _   => sqls"""(${SQLSyntax.joinWithOr(queries: _*)})"""
+      }
   }
 
   /**

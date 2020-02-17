@@ -289,7 +289,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
         _: ToEntityMarshaller[HttpEntity.Strict]
       ))
       .expects(
-        "/opa/compile",
+        "/v0/opa/compile",
         HttpEntity(
           ContentTypes.`application/json`,
           s"""{

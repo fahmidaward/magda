@@ -36,7 +36,6 @@ object AuthDirectives {
       implicit system: ActorSystem,
       config: Config
   ): Directive1[String] = {
-    // println("user id!!!")
     if (skipAuthorization) {
       provide("dummyUserId")
     } else {
@@ -58,8 +57,11 @@ object AuthDirectives {
                 userId
               )
             } catch {
-              case NonFatal(_) =>
-                log.info("Could not verify X-Magda-Session header in request")
+              case NonFatal(e) =>
+                log.error(
+                  e,
+                  "Could not verify X-Magda-Session header in request"
+                )
                 reject(
                   AuthenticationFailedRejection(
                     AuthenticationFailedRejection.CredentialsRejected,
