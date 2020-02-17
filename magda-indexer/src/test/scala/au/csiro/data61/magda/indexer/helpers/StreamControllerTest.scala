@@ -37,7 +37,7 @@ class StreamControllerTest extends FlatSpec with Matchers {
     start + r.nextInt((end - start) + 1)
   }
 
-  class MockRegistryInterface extends RegistryInterface {
+  class MockRegistryInterface extends RegistryExternalInterface {
     private val nextIndex = new AtomicInteger(0)
     private val dataSetCount = new AtomicInteger(0)
 
