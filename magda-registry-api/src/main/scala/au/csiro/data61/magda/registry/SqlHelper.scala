@@ -73,7 +73,10 @@ object SqlHelper {
           )
       }
 
-      sqls"""(${SQLSyntax.joinWithOr(queries: _*)})"""
+      queries match {
+        case Nil => SQL_TRUE
+        case _   => sqls"""(${SQLSyntax.joinWithOr(queries: _*)})"""
+      }
   }
 
   /**
