@@ -23,6 +23,9 @@ UI:
 -   Make the global notification banner configurable
 -   Removed all references to the DTA Design System react components, so that all styles come through our SCSS compilation, which should make SCSS smaller and more consistent.
 -   Swap the order of custodian & team dropdown on add dataset page
+-   Updated text & margin of add files page to match the new design
+-   Updated Add Dataset Welcome screen options UI design
+-   Added UI for "Link to dataset already hosted online" box
 
 Storage:
 
@@ -32,10 +35,8 @@ Storage:
 -   Add apidocs
 -   Add endpoint to create a bucket
 -   Restrict file upload to admins only
-
-Gateway:
-
--   Add /data to ckan URL, remove the `came_from` param
+-   Support multipart upload
+-   Fixed: minio chart will not be deployed if storage-api is not turned on
 
 Gateway:
 
@@ -44,6 +45,7 @@ Gateway:
 Authorization:
 
 -   Made integration tests for authorisation run automatically as part of CI.
+-   Added ability to set per-record authorization policies in the registry
 
 Others:
 

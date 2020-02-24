@@ -10,7 +10,6 @@ export function getUserId(req: Request, jwtSecret: string): Maybe<string> {
     if (jwtToken) {
         try {
             const jwtPayload = jwt.verify(jwtToken, jwtSecret);
-            console.log(JSON.stringify(jwtPayload, null, 2));
             return Maybe.just(jwtPayload.userId);
         } catch (e) {
             console.error(e);

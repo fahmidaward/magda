@@ -27,7 +27,6 @@ class AuthApiClient(authHttpFetcher: HttpFetcher)(
     implicit val materializer: Materializer
 ) extends AuthProtocols {
 
-  // private val opaUrl: String = config.getConfig("opa").getString("baseUrl")
   private val logger = system.log
 
   def this()(
