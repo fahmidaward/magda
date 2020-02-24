@@ -280,14 +280,14 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
 
         expectOpaQueryForPolicy(
           param,
-          "example1.policy",
+          "example1.policy.read",
           defaultPolicyResponse
         )
 
         expectOpaQueryForPolicy(
           param,
-          "example2.policy",
-          defaultPolicyResponse
+          "example2.policy.read",
+          policyResponseWithArray
         )
 
         Get(s"/v0/records") ~> addTenantIdHeader(
@@ -307,17 +307,16 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
       {
         "result": {
           "queries": [
+            [
+              {
+                "index": 0,
+                "terms": [
                   {
-                    "index": 0,
-                    "terms": [
+                    "type": "ref",
+                    "value": [
                       {
-                        "type": "ref",
-                        "value": [
-                          {
-                            "type": "var",
-                            "value": "gte"
-                          }
-                        ]
+                        "type": "var",
+                        "value": "gte"
                       }
                     ]
                   },
@@ -328,7 +327,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
                   {
                     "type": "ref",
                     "value": [
-                        {
+                      {
                         "type": "var",
                         "value": "input"
                       },
@@ -346,15 +345,15 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
                       },
                       {
                         "type": "string",
-                        "value": "example"
+                        "value": "example2"
+                      },
+                      {
+                        "type": "string",
+                        "value": "array"
                       },
                       {
                         "type": "var",
                         "value": "$02"
-                      },
-                      {
-                        "type": "string",
-                        "value": "clearance_level"
                       }
                     ]
                   }

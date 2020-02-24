@@ -322,9 +322,12 @@ object OpaParser {
           .slice(pathStartIndex, pathEndIndex)
           .map(term => {
             val aPathSegment = term match {
-              case RegoTermString(v)                => v
-              case RegoTermVar(anyInArrayPattern()) => OpaConsts.ANY_IN_ARRAY
-              case e                                => throw new Exception(s"Could not understand $e")
+              case RegoTermString(v) => v
+              case RegoTermVar(anyInArrayPattern()) =>
+                throw new Exception(
+                  "Can't yet match 'any in array' pattern in policies"
+                )
+              case e => throw new Exception(s"Could not understand $e")
             }
             RegoRefPartString(aPathSegment)
           })
