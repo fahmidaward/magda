@@ -94,7 +94,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
             recordId,
             "foo",
             Map(
-              "example" -> JsObject(
+              "stringExample" -> JsObject(
                 "nested" -> JsObject("public" -> JsString("true"))
               )
             ),
@@ -105,7 +105,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
         expectOpaQueryForPolicy(
           param,
           "not.default.policyid.read",
-          defaultPolicyResponse
+          stringPolicyResponse
         )
 
         Get(s"/v0/records/foo") ~> addTenantIdHeader(
@@ -126,7 +126,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
             recordId,
             "foo",
             Map(
-              "example" -> JsObject(
+              "stringExample" -> JsObject(
                 "nested" -> JsObject("public" -> JsString("false"))
               )
             ),
@@ -137,7 +137,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
         expectOpaQueryForPolicy(
           param,
           "not.default.policyid.read",
-          defaultPolicyResponse
+          stringPolicyResponse
         )
 
         Get(s"/v0/records/foo") ~> addTenantIdHeader(
@@ -158,7 +158,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
             recordId,
             "foo",
             Map(
-              "example" -> JsObject(
+              "stringExample" -> JsObject(
                 "nested" -> JsObject("public" -> JsString("true"))
               )
             ),
@@ -182,70 +182,8 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
     }
   }
 
-  val defaultPolicyResponse = """
-      {
-        "result": {
-          "queries": [
-            [
-              {
-                "index": 0,
-                "terms": [
-                  {
-                    "type": "ref",
-                    "value": [
-                      {
-                        "type": "var",
-                        "value": "eq"
-                      }
-                    ]
-                  },
-                  {
-                    "type": "ref",
-                    "value": [
-                      {
-                        "type": "var",
-                        "value": "input"
-                      },
-                      {
-                        "type": "string",
-                        "value": "object"
-                      },
-                      {
-                        "type": "string",
-                        "value": "registry"
-                      },
-                      {
-                        "type": "string",
-                        "value": "record"
-                      },
-                      {
-                        "type": "string",
-                        "value": "example"
-                      },
-                      {
-                        "type": "string",
-                        "value": "nested"
-                      },
-                      {
-                        "type": "string",
-                        "value": "public"
-                      }
-                    ]
-                  },
-                  {
-                    "type": "string",
-                    "value": "true"
-                  }
-                ]
-              }
-            ]
-          ]
-        }
-      }
-  """
-
   def addExampleAspectDef(param: FixtureParam) =
-    addAspectDef(param, "example")
+    addAspectDef(param, "stringExample")
 
   def addAspectDef(param: FixtureParam, id: String) =
     param.asAdmin(
@@ -313,4 +251,223 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
       status shouldEqual StatusCodes.OK
     }
   }
+
+  val stringPolicyResponse = """
+      {
+        "result": {
+          "queries": [
+            [
+              {
+                "index": 0,
+                "terms": [
+                  {
+                    "type": "ref",
+                    "value": [
+                      {
+                        "type": "var",
+                        "value": "eq"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ref",
+                    "value": [
+                      {
+                        "type": "var",
+                        "value": "input"
+                      },
+                      {
+                        "type": "string",
+                        "value": "object"
+                      },
+                      {
+                        "type": "string",
+                        "value": "registry"
+                      },
+                      {
+                        "type": "string",
+                        "value": "record"
+                      },
+                      {
+                        "type": "string",
+                        "value": "stringExample"
+                      },
+                      {
+                        "type": "string",
+                        "value": "nested"
+                      },
+                      {
+                        "type": "string",
+                        "value": "public"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "value": "true"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+  """
+
+  val policyResponseForNumericExampleAspect = """
+      {
+        "result": {
+          "queries": [
+            [
+              {
+                "index": 0,
+                "terms": [
+                  {
+                    "type": "ref",
+                    "value": [
+                      {
+                        "type": "var",
+                        "value": "lt"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "number",
+                    "value": 0
+                  },
+                  {
+                    "type": "ref",
+                    "value": [
+                      {
+                        "type": "var",
+                        "value": "input"
+                      },
+                      {
+                        "type": "string",
+                        "value": "object"
+                      },
+                      {
+                        "type": "string",
+                        "value": "registry"
+                      },
+                      {
+                        "type": "string",
+                        "value": "record"
+                      },
+                      {
+                        "type": "string",
+                        "value": "numericExample"
+                      },
+                      {
+                        "type": "string",
+                        "value": "number"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+  """
+
+  val policyResponseForBooleanExampleAspect = """
+      {
+        "result": {
+          "queries": [
+            [
+              {
+                "index": 0,
+                "terms": [
+                  {
+                    "type": "ref",
+                    "value": [
+                      {
+                        "type": "var",
+                        "value": "eq"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "boolean",
+                    "value": true
+                  },
+                  {
+                    "type": "ref",
+                    "value": [
+                      {
+                        "type": "var",
+                        "value": "input"
+                      },
+                      {
+                        "type": "string",
+                        "value": "object"
+                      },
+                      {
+                        "type": "string",
+                        "value": "registry"
+                      },
+                      {
+                        "type": "string",
+                        "value": "record"
+                      },
+                      {
+                        "type": "string",
+                        "value": "booleanExample"
+                      },
+                      {
+                        "type": "string",
+                        "value": "boolean"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+  """
+
+  val policyResponseForAspectExistenceExampleAspect = """
+      {
+        "result": {
+          "queries": [
+            [
+              {
+                "index": 0,
+                "terms": [
+                  {
+                    "type": "ref",
+                    "value": [
+                      {
+                        "type": "var",
+                        "value": "input"
+                      },
+                      {
+                        "type": "string",
+                        "value": "object"
+                      },
+                      {
+                        "type": "string",
+                        "value": "registry"
+                      },
+                      {
+                        "type": "string",
+                        "value": "record"
+                      },
+                      {
+                        "type": "string",
+                        "value": "aspectExistenceExample"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+  """
 }

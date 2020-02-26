@@ -43,7 +43,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
               recordId,
               "foo",
               Map(
-                "example" -> JsObject(
+                "stringExample" -> JsObject(
                   "nested" -> JsObject("public" -> JsString("true"))
                 )
               ),
@@ -146,7 +146,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
               "allow" + i,
               "allow" + i,
               Map(
-                "example" -> JsObject(
+                "stringExample" -> JsObject(
                   "nested" -> JsObject("public" -> JsString("true"))
                 )
               ),
@@ -162,7 +162,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
             "deny1",
             "deny1",
             Map(
-              "example" -> JsObject(
+              "stringExample" -> JsObject(
                 "nested" -> JsObject("public" -> JsString("false"))
               )
             ),
@@ -177,7 +177,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
             "deny2",
             "deny2",
             Map(
-              "example" -> JsObject("nested" -> JsObject())
+              "stringExample" -> JsObject("nested" -> JsObject())
             ),
             authnReadPolicyId = Some("not.default.policyid")
           )
@@ -197,7 +197,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         expectOpaQueryForPolicy(
           param,
           "not.default.policyid.read",
-          defaultPolicyResponse
+          stringPolicyResponse
         )
 
         Get(s"/v0/records") ~> addTenantIdHeader(
@@ -214,80 +214,141 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
       it(
         "when records have different policies, displays records with matching policies"
       ) { param =>
-        addAspectDef(param, "example1")
-        addAspectDef(param, "example2")
+        addAspectDef(param, "stringExample")
+        addAspectDef(param, "numericExample")
+        addAspectDef(param, "booleanExample")
+        addAspectDef(param, "aspectExistenceExample")
 
         addRecord(
           param,
           Record(
-            "allowExample1",
-            "allowExample1",
+            "allowStringExample",
+            "allowStringExample",
             Map(
-              "example1" -> JsObject(
+              "stringExample" -> JsObject(
                 "nested" -> JsObject("public" -> JsString("true"))
               )
             ),
-            authnReadPolicyId = Some("example1.policy")
+            authnReadPolicyId = Some("stringExample.policy")
           )
         )
         addRecord(
           param,
           Record(
-            "denyExample1",
-            "denyExample1",
+            "denyStringExample",
+            "denyStringExample",
             Map(
-              "example1" -> JsObject(
+              "stringExample" -> JsObject(
                 "nested" -> JsObject("public" -> JsString("false"))
               )
             ),
-            authnReadPolicyId = Some("example1.policy")
+            authnReadPolicyId = Some("stringExample.policy")
+          )
+        )
+
+        addRecord(
+          param,
+          Record(
+            "allowNumericExample",
+            "allowNumericExample",
+            Map(
+              "numericExample" -> JsObject(
+                "number" ->
+                  JsNumber(-1)
+              )
+            ),
+            authnReadPolicyId = Some("numericExample.policy")
           )
         )
         addRecord(
           param,
           Record(
-            "allowExample2",
-            "allowExample2",
+            "denyNumericExample",
+            "denyNumericExample",
             Map(
-              "example2" -> JsObject(
-                "array" -> JsArray(
-                  JsNumber(-1),
-                  JsNumber(-5),
-                  JsNumber(-2)
-                )
+              "numericExample" -> JsObject(
+                "number" ->
+                  JsNumber(2)
               )
             ),
-            authnReadPolicyId = Some("example2.policy")
+            authnReadPolicyId = Some("numericExample.policy")
+          )
+        )
+
+        addRecord(
+          param,
+          Record(
+            "allowBooleanExample",
+            "allowBooleanExample",
+            Map(
+              "booleanExample" -> JsObject(
+                "boolean" ->
+                  JsTrue
+              )
+            ),
+            authnReadPolicyId = Some("booleanExample.policy")
           )
         )
         addRecord(
           param,
           Record(
-            "denyExample2",
-            "denyExample2",
+            "denyBooleanExample",
+            "denyBooleanExample",
             Map(
-              "example2" -> JsObject(
-                "array" -> JsArray(
-                  JsNumber(-3),
-                  JsNumber(2),
-                  JsNumber(-4)
-                )
+              "booleanExample" -> JsObject(
+                "boolean" ->
+                  JsFalse
               )
             ),
-            authnReadPolicyId = Some("example2.policy")
+            authnReadPolicyId = Some("booleanExample.policy")
+          )
+        )
+
+        addRecord(
+          param,
+          Record(
+            "allowAspectExistenceExample",
+            "allowAspectExistenceExample",
+            Map(
+              "aspectExistenceExample" -> JsObject(
+                )
+            ),
+            authnReadPolicyId = Some("aspectExistenceExample.policy")
+          )
+        )
+        addRecord(
+          param,
+          Record(
+            "denyAspectExistenceExample",
+            "denyAspectExistenceExample",
+            Map(
+              ),
+            authnReadPolicyId = Some("aspectExistenceExample.policy")
           )
         )
 
         expectOpaQueryForPolicy(
           param,
-          "example1.policy.read",
-          defaultPolicyResponse
+          "stringExample.policy.read",
+          stringPolicyResponse
         )
 
         expectOpaQueryForPolicy(
           param,
-          "example2.policy.read",
-          policyResponseWithArray
+          "numericExample.policy.read",
+          policyResponseForNumericExampleAspect
+        )
+
+        expectOpaQueryForPolicy(
+          param,
+          "booleanExample.policy.read",
+          policyResponseForBooleanExampleAspect
+        )
+
+        expectOpaQueryForPolicy(
+          param,
+          "aspectExistenceExample.policy.read",
+          policyResponseForAspectExistenceExampleAspect
         )
 
         Get(s"/v0/records") ~> addTenantIdHeader(
@@ -296,72 +357,16 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
           status shouldEqual StatusCodes.OK
           val resPage = responseAs[RecordsPage[Record]]
 
-          resPage.records.length shouldBe 3
-          resPage.records.forall(_.id.startsWith("allow"))
+          println(resPage)
+
+          resPage.records.map(_.id).toSet shouldEqual Set(
+            "allowStringExample",
+            "allowNumericExample",
+            "allowBooleanExample",
+            "allowAspectExistenceExample"
+          )
         }
       }
     }
   }
-
-  val policyResponseWithArray = """
-      {
-        "result": {
-          "queries": [
-            [
-              {
-                "index": 0,
-                "terms": [
-                  {
-                    "type": "ref",
-                    "value": [
-                      {
-                        "type": "var",
-                        "value": "gte"
-                      }
-                    ]
-                  },
-                  {
-                    "type": "number",
-                    "value": 0
-                  },
-                  {
-                    "type": "ref",
-                    "value": [
-                      {
-                        "type": "var",
-                        "value": "input"
-                      },
-                      {
-                        "type": "string",
-                        "value": "object"
-                      },
-                      {
-                        "type": "string",
-                        "value": "registry"
-                      },
-                      {
-                        "type": "string",
-                        "value": "record"
-                      },
-                      {
-                        "type": "string",
-                        "value": "example2"
-                      },
-                      {
-                        "type": "string",
-                        "value": "array"
-                      },
-                      {
-                        "type": "var",
-                        "value": "$02"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          ]
-        }
-      }
-  """
 }
