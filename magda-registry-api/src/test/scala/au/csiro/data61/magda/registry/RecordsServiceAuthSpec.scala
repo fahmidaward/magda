@@ -197,7 +197,7 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         expectOpaQueryForPolicy(
           param,
           "not.default.policyid.read",
-          stringPolicyResponse
+          policyResponseForStringExampleAspect
         )
 
         Get(s"/v0/records") ~> addTenantIdHeader(
@@ -223,13 +223,13 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         addStringExampleRecords(param)
         addNumericExampleRecords(param)
         addBooleanExampleRecords(param)
-        addAspectExistenceRecords(param)
-        addExistenceRecord(param)
+        addAspectExistenceExampleRecords(param)
+        addExistenceExampleRecords(param)
 
         expectOpaQueryForPolicy(
           param,
           "stringExample.policy.read",
-          stringPolicyResponse
+          policyResponseForStringExampleAspect
         )
 
         expectOpaQueryForPolicy(

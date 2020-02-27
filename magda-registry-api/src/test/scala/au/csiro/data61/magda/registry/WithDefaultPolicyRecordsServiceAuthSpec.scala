@@ -94,7 +94,7 @@ class WithDefaultPolicyRecordsServiceAuthSpec
               expectOpaQueryForPolicy(
                 param,
                 "default.policy.read",
-                stringPolicyResponse
+                policyResponseForStringExampleAspect
               )
 
               Get(s"/v0/records/foo") ~> addTenantIdHeader(
@@ -124,7 +124,7 @@ class WithDefaultPolicyRecordsServiceAuthSpec
               expectOpaQueryForPolicy(
                 param,
                 "default.policy.read",
-                stringPolicyResponse
+                policyResponseForStringExampleAspect
               )
 
               Get(s"/v0/records/foo") ~> addTenantIdHeader(
@@ -150,7 +150,7 @@ class WithDefaultPolicyRecordsServiceAuthSpec
               expectOpaQueryForPolicy(
                 param,
                 "default.policy.read",
-                stringPolicyResponse
+                policyResponseForStringExampleAspect
               )
 
               Get(s"/v0/records/foo") ~> addTenantIdHeader(

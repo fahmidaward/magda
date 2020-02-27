@@ -105,7 +105,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
         expectOpaQueryForPolicy(
           param,
           "not.default.policyid.read",
-          stringPolicyResponse
+          policyResponseForStringExampleAspect
         )
 
         Get(s"/v0/records/foo") ~> addTenantIdHeader(
@@ -137,7 +137,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
         expectOpaQueryForPolicy(
           param,
           "not.default.policyid.read",
-          stringPolicyResponse
+          policyResponseForStringExampleAspect
         )
 
         Get(s"/v0/records/foo") ~> addTenantIdHeader(
@@ -150,15 +150,80 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
 
     describe("policies successfully allow and deny for") {
       it("a string-based policy") { param =>
-        addAspectDef(param, "stringExample")
-        addStringExampleRecords(param)
+        doPolicyTest(
+          param,
+          "stringExample",
+          addStringExampleRecords,
+          policyResponseForStringExampleAspect
+        )
+      }
+
+      it("a boolean-based policy") { param =>
+        doPolicyTest(
+          param,
+          "booleanExample",
+          addBooleanExampleRecords,
+          policyResponseForBooleanExampleAspect
+        )
+      }
+
+      it("a numeric-based policy") { param =>
+        doPolicyTest(
+          param,
+          "numericExample",
+          addNumericExampleRecords,
+          policyResponseForNumericExampleAspect
+        )
+      }
+
+      it("a policy that tests for the existence of an aspect") { param =>
+        doPolicyTest(
+          param,
+          "aspectExistenceExample",
+          addAspectExistenceExampleRecords,
+          policyResponseForAspectExistenceExampleAspect
+        )
+      }
+
+      it("a policy that tests for the existence of a field within an aspect") {
+        param =>
+          doPolicyTest(
+            param,
+            "existenceExample",
+            addExistenceExampleRecords,
+            policyResponseForExistenceExampleAspect
+          )
+      }
+
+      def doPolicyTest(
+          param: FixtureParam,
+          exampleId: String,
+          addRecords: FixtureParam => Unit,
+          policyResponse: String
+      ) = {
+        val PascalCaseId = exampleId.charAt(0).toUpper + exampleId.substring(1)
+        val camelCaseId = exampleId.charAt(0).toLower + exampleId.substring(1)
+
+        addAspectDef(param, camelCaseId)
+        addRecords(param)
+
         expectOpaQueryForPolicy(
           param,
-          "stringExample.policy.read",
-          stringPolicyResponse
-        )
+          s"$camelCaseId.policy.read",
+          policyResponse
+        ).twice()
 
-        
+        Get(s"/v0/records/allow$PascalCaseId") ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          status shouldEqual StatusCodes.OK
+        }
+
+        Get(s"/v0/records/deny$PascalCaseId") ~> addTenantIdHeader(
+          TENANT_1
+        ) ~> param.api(Full).routes ~> check {
+          status shouldEqual StatusCodes.NotFound
+        }
       }
     }
 
@@ -357,7 +422,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
     )
   }
 
-  def addAspectExistenceRecords(param: FixtureParam) {
+  def addAspectExistenceExampleRecords(param: FixtureParam) {
     addRecord(
       param,
       Record(
@@ -382,7 +447,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
     )
   }
 
-  def addExistenceRecord(param: FixtureParam) {
+  def addExistenceExampleRecords(param: FixtureParam) {
     addRecord(
       param,
       Record(
@@ -409,7 +474,7 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
     )
   }
 
-  val stringPolicyResponse = """
+  val policyResponseForStringExampleAspect = """
       {
         "result": {
           "queries": [
