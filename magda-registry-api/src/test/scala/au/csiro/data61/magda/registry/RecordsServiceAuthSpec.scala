@@ -218,114 +218,13 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
         addAspectDef(param, "numericExample")
         addAspectDef(param, "booleanExample")
         addAspectDef(param, "aspectExistenceExample")
+        addAspectDef(param, "existenceExample")
 
-        addRecord(
-          param,
-          Record(
-            "allowStringExample",
-            "allowStringExample",
-            Map(
-              "stringExample" -> JsObject(
-                "nested" -> JsObject("public" -> JsString("true"))
-              )
-            ),
-            authnReadPolicyId = Some("stringExample.policy")
-          )
-        )
-        addRecord(
-          param,
-          Record(
-            "denyStringExample",
-            "denyStringExample",
-            Map(
-              "stringExample" -> JsObject(
-                "nested" -> JsObject("public" -> JsString("false"))
-              )
-            ),
-            authnReadPolicyId = Some("stringExample.policy")
-          )
-        )
-
-        addRecord(
-          param,
-          Record(
-            "allowNumericExample",
-            "allowNumericExample",
-            Map(
-              "numericExample" -> JsObject(
-                "number" ->
-                  JsNumber(-1)
-              )
-            ),
-            authnReadPolicyId = Some("numericExample.policy")
-          )
-        )
-        addRecord(
-          param,
-          Record(
-            "denyNumericExample",
-            "denyNumericExample",
-            Map(
-              "numericExample" -> JsObject(
-                "number" ->
-                  JsNumber(2)
-              )
-            ),
-            authnReadPolicyId = Some("numericExample.policy")
-          )
-        )
-
-        addRecord(
-          param,
-          Record(
-            "allowBooleanExample",
-            "allowBooleanExample",
-            Map(
-              "booleanExample" -> JsObject(
-                "boolean" ->
-                  JsTrue
-              )
-            ),
-            authnReadPolicyId = Some("booleanExample.policy")
-          )
-        )
-        addRecord(
-          param,
-          Record(
-            "denyBooleanExample",
-            "denyBooleanExample",
-            Map(
-              "booleanExample" -> JsObject(
-                "boolean" ->
-                  JsFalse
-              )
-            ),
-            authnReadPolicyId = Some("booleanExample.policy")
-          )
-        )
-
-        addRecord(
-          param,
-          Record(
-            "allowAspectExistenceExample",
-            "allowAspectExistenceExample",
-            Map(
-              "aspectExistenceExample" -> JsObject(
-                )
-            ),
-            authnReadPolicyId = Some("aspectExistenceExample.policy")
-          )
-        )
-        addRecord(
-          param,
-          Record(
-            "denyAspectExistenceExample",
-            "denyAspectExistenceExample",
-            Map(
-              ),
-            authnReadPolicyId = Some("aspectExistenceExample.policy")
-          )
-        )
+        addStringExampleRecords(param)
+        addNumericExampleRecords(param)
+        addBooleanExampleRecords(param)
+        addAspectExistenceRecords(param)
+        addExistenceRecord(param)
 
         expectOpaQueryForPolicy(
           param,
@@ -351,19 +250,24 @@ class RecordsServiceAuthSpec extends BaseRecordsServiceAuthSpec {
           policyResponseForAspectExistenceExampleAspect
         )
 
+        expectOpaQueryForPolicy(
+          param,
+          "existenceExample.policy.read",
+          policyResponseForExistenceExampleAspect
+        )
+
         Get(s"/v0/records") ~> addTenantIdHeader(
           TENANT_1
         ) ~> param.api(Full).routes ~> check {
           status shouldEqual StatusCodes.OK
           val resPage = responseAs[RecordsPage[Record]]
 
-          println(resPage)
-
           resPage.records.map(_.id).toSet shouldEqual Set(
             "allowStringExample",
             "allowNumericExample",
             "allowBooleanExample",
-            "allowAspectExistenceExample"
+            "allowAspectExistenceExample",
+            "allowExistenceExample"
           )
         }
       }

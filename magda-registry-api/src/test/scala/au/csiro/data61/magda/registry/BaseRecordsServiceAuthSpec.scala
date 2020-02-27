@@ -148,6 +148,20 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
       }
     }
 
+    describe("policies successfully allow and deny for") {
+      it("a string-based policy") { param =>
+        addAspectDef(param, "stringExample")
+        addStringExampleRecords(param)
+        expectOpaQueryForPolicy(
+          param,
+          "stringExample.policy.read",
+          stringPolicyResponse
+        )
+
+        
+      }
+    }
+
     it("if OPA responds with an error, registry should respond with an error") {
       param =>
         addExampleAspectDef(param)
@@ -250,6 +264,149 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
       }
       status shouldEqual StatusCodes.OK
     }
+  }
+
+  def addStringExampleRecords(param: FixtureParam) {
+    addRecord(
+      param,
+      Record(
+        "allowStringExample",
+        "allowStringExample",
+        Map(
+          "stringExample" -> JsObject(
+            "nested" -> JsObject("public" -> JsString("true"))
+          )
+        ),
+        authnReadPolicyId = Some("stringExample.policy")
+      )
+    )
+    addRecord(
+      param,
+      Record(
+        "denyStringExample",
+        "denyStringExample",
+        Map(
+          "stringExample" -> JsObject(
+            "nested" -> JsObject("public" -> JsString("false"))
+          )
+        ),
+        authnReadPolicyId = Some("stringExample.policy")
+      )
+    )
+  }
+
+  def addNumericExampleRecords(param: FixtureParam) {
+    addRecord(
+      param,
+      Record(
+        "allowNumericExample",
+        "allowNumericExample",
+        Map(
+          "numericExample" -> JsObject(
+            "number" ->
+              JsNumber(-1)
+          )
+        ),
+        authnReadPolicyId = Some("numericExample.policy")
+      )
+    )
+    addRecord(
+      param,
+      Record(
+        "denyNumericExample",
+        "denyNumericExample",
+        Map(
+          "numericExample" -> JsObject(
+            "number" ->
+              JsNumber(2)
+          )
+        ),
+        authnReadPolicyId = Some("numericExample.policy")
+      )
+    )
+  }
+
+  def addBooleanExampleRecords(param: FixtureParam) {
+    addRecord(
+      param,
+      Record(
+        "allowBooleanExample",
+        "allowBooleanExample",
+        Map(
+          "booleanExample" -> JsObject(
+            "boolean" ->
+              JsTrue
+          )
+        ),
+        authnReadPolicyId = Some("booleanExample.policy")
+      )
+    )
+    addRecord(
+      param,
+      Record(
+        "denyBooleanExample",
+        "denyBooleanExample",
+        Map(
+          "booleanExample" -> JsObject(
+            "boolean" ->
+              JsFalse
+          )
+        ),
+        authnReadPolicyId = Some("booleanExample.policy")
+      )
+    )
+  }
+
+  def addAspectExistenceRecords(param: FixtureParam) {
+    addRecord(
+      param,
+      Record(
+        "allowAspectExistenceExample",
+        "allowAspectExistenceExample",
+        Map(
+          "aspectExistenceExample" -> JsObject(
+            )
+        ),
+        authnReadPolicyId = Some("aspectExistenceExample.policy")
+      )
+    )
+    addRecord(
+      param,
+      Record(
+        "denyAspectExistenceExample",
+        "denyAspectExistenceExample",
+        Map(
+          ),
+        authnReadPolicyId = Some("aspectExistenceExample.policy")
+      )
+    )
+  }
+
+  def addExistenceRecord(param: FixtureParam) {
+    addRecord(
+      param,
+      Record(
+        "allowExistenceExample",
+        "allowExistenceExample",
+        Map(
+          "existenceExample" -> JsObject(
+            "value" -> JsObject()
+          )
+        ),
+        authnReadPolicyId = Some("existenceExample.policy")
+      )
+    )
+    addRecord(
+      param,
+      Record(
+        "denyExistenceExample",
+        "denyExistenceExample",
+        Map(
+          "existenceExample" -> JsObject()
+        ),
+        authnReadPolicyId = Some("existenceExample.policy")
+      )
+    )
   }
 
   val stringPolicyResponse = """
@@ -430,7 +587,8 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
       }
   """
 
-  val policyResponseForAspectExistenceExampleAspect = """
+  val policyResponseForAspectExistenceExampleAspect =
+    """
       {
         "result": {
           "queries": [
@@ -470,4 +628,50 @@ abstract class BaseRecordsServiceAuthSpec extends ApiSpec {
         }
       }
   """
+
+  val policyResponseForExistenceExampleAspect = """
+      {
+        "result": {
+          "queries": [
+            [
+              {
+                "index": 0,
+                "terms": [
+                  {
+                    "type": "ref",
+                    "value": [
+                      {
+                        "type": "var",
+                        "value": "input"
+                      },
+                      {
+                        "type": "string",
+                        "value": "object"
+                      },
+                      {
+                        "type": "string",
+                        "value": "registry"
+                      },
+                      {
+                        "type": "string",
+                        "value": "record"
+                      },
+                      {
+                        "type": "string",
+                        "value": "existenceExample"
+                      },
+                      {
+                        "type": "string",
+                        "value": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+  """
+
 }
